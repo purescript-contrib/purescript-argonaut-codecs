@@ -1,0 +1,38 @@
+{
+  "name": "purescript-argonaut-codecs",
+  "homepage": "https://github.com/purescript-contrib/purescript-argonaut-codecs",
+  "authors": [
+    "Maxim Zimaliev <zimaliev@yandex.ru>",
+    "Hardy Jones <>",
+    "John A. De Goes <john@degoes.net>"
+  ],
+  "description": "Codecs for purescript argonaut",
+  "keywords": [
+    "purescript",
+    "json",
+    "argonaut",
+    "encode",
+    "decode",
+    "codec",
+    "combinators"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "purescript-argonaut-core": "~0.1.0",
+    "purescript-maybe": "~0.3.2",
+    "purescript-either": "~0.2.0",
+    "purescript-arrays": "~0.4.0",
+    "purescript-strings": "~0.5.3",
+    "purescript-lists": "~0.7.0",
+    "purescript-maps": "~0.4.0",
+    "purescript-foldable-traversable": "~0.4.0",
+    "purescript-unfoldable": "~0.4.0",
+    "purescript-tuples": "~0.4.0",
+    "purescript-control": "~0.3.0"
+  },
+  "devDependencies": {
+    "purescript-eff": "~0.1.0",
+    "purescript-console": "~0.1.0",
+    "purescript-strongcheck": "~0.10.0"
+  }
+}
