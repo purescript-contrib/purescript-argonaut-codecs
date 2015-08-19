@@ -16,23 +16,16 @@
     "codec",
     "combinators"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/purescript-contrib/purescript-argonaut-codecs.git"
+  },
   "license": "MIT",
   "dependencies": {
-    "purescript-argonaut-core": "~0.2.0",
-    "purescript-maybe": "~0.3.4",
-    "purescript-either": "~0.2.1",
-    "purescript-arrays": "~0.4.2",
-    "purescript-strings": "~0.7.0",
-    "purescript-lists": "~0.7.0",
-    "purescript-maps": "~0.5.0",
-    "purescript-foldable-traversable": "~0.4.0",
-    "purescript-unfoldable": "~0.4.0",
-    "purescript-tuples": "~0.4.0",
-    "purescript-control": "~0.3.0"
+    "purescript-argonaut-core": "^0.2.0",
+    "purescript-integers": "^0.2.1"
   },
   "devDependencies": {
-    "purescript-eff": "~0.1.0",
-    "purescript-console": "~0.1.0",
-    "purescript-strongcheck": "0.12.0"
+    "purescript-strongcheck": "^0.12.1"
   }
 }

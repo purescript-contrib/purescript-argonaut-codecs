@@ -4,15 +4,7 @@
 var gulp        = require('gulp')
   , purescript  = require('gulp-purescript')
   , run         = require('gulp-run')
-  , runSequence = require('run-sequence')
   ;
-
-function sequence() {
-    var args = [].slice.apply(arguments);
-    return function() {
-        runSequence.apply(null, args);
-    };
-}
 
 var sources = [
     'src/**/*.purs',
@@ -67,4 +59,4 @@ gulp.task('test', ['test-make'], function() {
 });
 
 
-gulp.task("default", sequence("make", "docs"));
+gulp.task("default", ["make", "docs"]);
