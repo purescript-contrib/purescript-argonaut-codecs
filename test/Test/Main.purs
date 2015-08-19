@@ -51,17 +51,18 @@ genJson n = frequency (Tuple 1.0 genJNull) rest where
                  Tuple 1.0 (genJArray n),
                  Tuple 1.0 (genJObject n)]
 
--- orphan, but it's just for tests 
-instance arbitraryJson :: Arbitrary Json where
-  arbitrary = sized genJson
+newtype TestJson = TestJson Json
+
+instance arbitraryTestJson :: Arbitrary TestJson where
+  arbitrary = TestJson <$> sized genJson
 
 
-prop_encode_then_decode :: Json -> Boolean
-prop_encode_then_decode json =
+prop_encode_then_decode :: TestJson -> Boolean
+prop_encode_then_decode (TestJson json) =
   Right json == (decodeJson $ encodeJson $ json)
 
-prop_decode_then_encode :: Json -> Boolean
-prop_decode_then_encode json =
+prop_decode_then_encode :: TestJson -> Boolean
+prop_decode_then_encode (TestJson json) =
   let decoded = (decodeJson json) :: Either String Json in
   Right json == (decoded >>= (encodeJson >>> pure))
 
@@ -90,9 +91,10 @@ instance arbitraryObj :: Arbitrary Obj where
   arbitrary = Obj <$> (genJObject 5)
 
 
-prop_assoc_append :: (Tuple JAssoc Obj) -> Boolean
-prop_assoc_append (Tuple assoc@(Tuple key val) (Obj obj)) =
+prop_assoc_append :: (Tuple (Tuple String TestJson) Obj) -> Boolean
+prop_assoc_append (Tuple (Tuple key (TestJson val)) (Obj obj)) =
   let appended = assoc ~> obj
+      assoc = Tuple key val
   in case toObject appended >>= M.lookup key of
     Just val -> true
     _ -> false
