@@ -25,6 +25,22 @@ instance decodeList :: (DecodeJson a) => DecodeJson (List a)
 instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (Map a b)
 ```
 
+#### `gDecodeJson`
+
+``` purescript
+gDecodeJson :: forall a. (Generic a) => Json -> Either String a
+```
+
+Decode `Json` representation of a value which has a `Generic` type.
+
+#### `gDecodeJson'`
+
+``` purescript
+gDecodeJson' :: GenericSignature -> Json -> Either String GenericSpine
+```
+
+Decode `Json` representation of a `GenericSpine`.
+
 #### `decodeMaybe`
 
 ``` purescript

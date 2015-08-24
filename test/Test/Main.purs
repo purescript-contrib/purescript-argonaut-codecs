@@ -2,14 +2,15 @@ module Test.Main where
 
 import Prelude
 
-import Data.Argonaut.Core 
-import Data.Argonaut.Decode (decodeJson, DecodeJson)
-import Data.Argonaut.Encode (encodeJson, EncodeJson)
+import Data.Argonaut.Core
+import Data.Argonaut.Decode (decodeJson, DecodeJson, gDecodeJson, gDecodeJson')
+import Data.Argonaut.Encode (encodeJson, EncodeJson, gEncodeJson, gEncodeJson')
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=), (.?))
 import Data.Either
 import Data.Tuple
 import Data.Maybe
 import Data.Array
+import Data.Generic
 import Data.Foldable (foldl)
 import Data.List (toList, List(..))
 import Control.Monad.Eff.Console
@@ -17,7 +18,7 @@ import qualified Data.StrMap as M
 
 import Test.StrongCheck
 import Test.StrongCheck.Gen
-
+import Test.StrongCheck.Generic
 
 genJNull :: Gen Json
 genJNull = pure jsonNull
@@ -67,7 +68,7 @@ prop_decode_then_encode (TestJson json) =
   Right json == (decoded >>= (encodeJson >>> pure))
 
 
-encodeDecodeCheck = do 
+encodeDecodeCheck = do
   log "Showing small sample of JSON"
   showSample (genJson 10)
 
@@ -81,7 +82,7 @@ prop_assoc_builder_str :: Tuple String String -> Boolean
 prop_assoc_builder_str (Tuple key str) =
   case (key := str) of
     Tuple k json ->
-      (key == k) && (decodeJson json == Right str) 
+      (key == k) && (decodeJson json == Right str)
 
 newtype Obj = Obj Json
 unObj :: Obj -> Json
@@ -110,7 +111,7 @@ prop_get_jobject_field (Obj obj) =
     in foldl (\ok key -> ok && (isJust $ M.lookup key obj)) true keys
 
 assert_maybe_msg :: Boolean
-assert_maybe_msg = 
+assert_maybe_msg =
   (isLeft (Nothing ?>>= "Nothing is Left"))
   &&
   ((Just 2 ?>>= "Nothing is left") == Right 2)
@@ -127,9 +128,62 @@ combinatorsCheck = do
   quickCheck' 20 prop_get_jobject_field
   log "Assert maybe to either convertion"
   assert assert_maybe_msg
-  
+
+newtype MyRecord = MyRecord { foo :: String, bar :: Int}
+derive instance genericMyRecord :: Generic MyRecord
+
+data User = Anonymous
+          | Guest String
+          | Registered { name :: String
+                       , age :: Int
+                       , balance :: Number
+                       , banned :: Boolean
+                       , tweets :: Array String
+                       , followers :: Array User
+                       }
+derive instance genericUser :: Generic User
+
+prop_iso_generic :: GenericValue -> Boolean
+prop_iso_generic genericValue =
+  Right val.spine == gDecodeJson' val.signature (gEncodeJson' val.spine)
+  where val = runGenericValue genericValue
+
+prop_decoded_spine_valid :: GenericValue -> Boolean
+prop_decoded_spine_valid genericValue =
+  Right true == (isValidSpine val.signature <$> gDecodeJson' val.signature (gEncodeJson' val.spine))
+  where val = runGenericValue genericValue
+
+genericsCheck = do
+  log "Check that decodeJson' and encodeJson' form an isomorphism"
+  quickCheck prop_iso_generic
+  log "Check that decodeJson' returns a valid spine"
+  quickCheck prop_decoded_spine_valid
+  log "Print samples of values encoded with gEncodeJson"
+  print $ gEncodeJson 5
+  print $ gEncodeJson [1, 2, 3, 5]
+  print $ gEncodeJson (Just "foo")
+  print $ gEncodeJson (Right "foo" :: Either String String)
+  print $ gEncodeJson $ MyRecord { foo: "foo", bar: 2}
+  print $ gEncodeJson "foo"
+  print $ gEncodeJson Anonymous
+  print $ gEncodeJson $ Guest "guest's handle"
+  print $ gEncodeJson $ Registered { name: "user1"
+                                   , age: 5
+                                   , balance: 26.6
+                                   , banned: false
+                                   , tweets: ["Hello", "What's up"]
+                                   , followers: [ Anonymous
+                                                , Guest "someGuest"
+                                                , Registered { name: "user2"
+                                                             , age: 6
+                                                             , balance: 32.1
+                                                             , banned: false
+                                                             , tweets: ["Hi"]
+                                                             , followers: []
+                                                             }]}
 
 
 main = do
   encodeDecodeCheck
   combinatorsCheck
+  genericsCheck

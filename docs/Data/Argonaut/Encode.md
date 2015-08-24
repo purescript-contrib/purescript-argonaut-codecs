@@ -25,4 +25,20 @@ instance encodeStrMap :: (EncodeJson a) => EncodeJson (StrMap a)
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (Map a b)
 ```
 
+#### `gEncodeJson`
+
+``` purescript
+gEncodeJson :: forall a. (Generic a) => a -> Json
+```
+
+Encode any `Generic` data structure into `Json`.
+
+#### `gEncodeJson'`
+
+``` purescript
+gEncodeJson' :: GenericSpine -> Json
+```
+
+Encode `GenericSpine` into `Json`.
+
 
