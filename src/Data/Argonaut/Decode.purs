@@ -1,6 +1,8 @@
 module Data.Argonaut.Decode
   ( DecodeJson
   , decodeJson
+  , gDecodeJson
+  , gDecodeJson'
   , decodeMaybe
   ) where
 
@@ -20,22 +22,64 @@ import Data.Argonaut.Core
   , toNumber
   , toObject
   , toString
+  , toBoolean
   )
+import Data.Array (zipWithA)
 import Data.Either (either, Either(..))
 import Data.Int (fromNumber)
 import Data.Maybe (maybe, Maybe(..))
-import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.String
 import Data.List (List(..), toList)
 import Control.Alt
-import Data.Traversable (traverse)
+import Control.Bind ((=<<))
+import Data.Traversable (traverse, for)
+import Data.Foldable (find)
+import Data.Generic
 
 import qualified Data.StrMap as M
 import qualified Data.Map as Map
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
+
+-- | Decode `Json` representation of a value which has a `Generic` type.
+gDecodeJson :: forall a. (Generic a) => Json -> Either String a
+gDecodeJson json = maybe (Left "fromSpine failed") Right <<< fromSpine
+                 =<< gDecodeJson' (toSignature (Proxy :: Proxy a)) json
+
+-- | Decode `Json` representation of a `GenericSpine`.
+gDecodeJson' :: GenericSignature -> Json -> Either String GenericSpine
+gDecodeJson' signature json = case signature of
+  SigNumber
+    -> SNumber <$> mFail "Expected a number" (toNumber json)
+  SigInt
+    -> SInt <$> mFail "Expected an integer number" (fromNumber =<< toNumber json)
+  SigString
+    -> SString <$> mFail "Expected a string" (toString json)
+  SigBoolean
+    -> SBoolean <$> mFail "Expected a boolean" (toBoolean json)
+  SigArray thunk
+    -> do jArr <- mFail "Expected an array" $ toArray json
+          SArray <$> traverse (map const <<< gDecodeJson' (thunk unit)) jArr
+  SigRecord props
+    -> do jObj <- mFail "Expected an object" $ toObject json
+          SRecord <$> for props \({recLabel: lbl, recValue: val})
+            -> do pf <- mFail ("'" <> lbl <> "' property missing") (M.lookup lbl jObj)
+                  sp <- gDecodeJson' (val unit) pf
+                  pure { recLabel: lbl, recValue: const sp }
+  SigProd alts
+    -> do jObj <- mFail "Expected an object" $ toObject json
+          tag  <- mFail "'tag' string property is missing" (toString =<< M.lookup "tag" jObj)
+          case find ((tag ==) <<< _.sigConstructor) alts of
+            Nothing -> Left ("'" <> tag <> "' isn't a valid constructor")
+            Just { sigValues: sigValues } -> do
+              vals <- mFail "'values' array is missing" (toArray =<< M.lookup "values" jObj)
+              sps  <- zipWithA (\k -> gDecodeJson' (k unit)) sigValues vals
+              pure (SProd tag (const <$> sps))
+  where
+    mFail :: forall a. String -> Maybe a -> Either String a
+    mFail msg = maybe (Left msg) Right
 
 instance decodeJsonMaybe :: (DecodeJson a) => DecodeJson (Maybe a) where
   decodeJson j = (Just <$> decodeJson j) <|> pure Nothing
