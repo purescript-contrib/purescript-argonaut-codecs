@@ -2,7 +2,7 @@
 
 # purescript-argonaut-codecs
 
-`EncodeJson` and `DecodeJson` classes and instances for __purescript-argonaut__. Also useful combinators for encoding ando decoding stuff.
+`EncodeJson` and `DecodeJson` classes and instances for __purescript-argonaut__. Also useful combinators for encoding and decoding stuff.
 
 ## Installation
 
@@ -10,7 +10,7 @@
 bower install purescript-argonaut-codecs
 ```
 
-## Documentaion
+## Documentation
 
 - [Data.Argonaut.Encode](docs/Data/Argonaut/Encode.md)
 - [Data.Argonaut.Decode](docs/Data/Argonaut/Decode.md)
