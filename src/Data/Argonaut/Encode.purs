@@ -1,38 +1,23 @@
 module Data.Argonaut.Encode
-       ( EncodeJson
-       , encodeJson
-       , gEncodeJson
-       , gEncodeJson'
-       ) where
+  ( EncodeJson
+  , encodeJson
+  , gEncodeJson
+  , gEncodeJson'
+  ) where
 
 import Prelude
 
-import Data.Argonaut.Core
-  ( Json()
-  , foldJsonObject
-  , jsonNull
-  , fromNull
-  , fromBoolean
-  , fromNumber
-  , fromString
-  , fromArray
-  , fromObject
-  , jsonEmptyArray
-  , jsonEmptyObject
-  , jsonSingletonObject
-  )
-import Data.String (fromChar)
-import Data.Maybe
-import Data.Either
-import Data.List (List(..), fromList, toList)
+import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
+import Data.Either (Either(..))
+import Data.Foldable (foldr)
+import Data.Generic (Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
-import Data.Unfoldable ()
-import Data.Foldable (foldMap, foldr)
+import Data.List (List(..), fromList)
+import Data.Map as M
+import Data.Maybe (Maybe(..))
+import Data.String (fromChar)
+import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
-import Data.Generic
-
-import qualified Data.StrMap as SM
-import qualified Data.Map as M
 
 class EncodeJson a where
   encodeJson :: a -> Json
@@ -46,6 +31,7 @@ gEncodeJson' :: GenericSpine -> Json
 gEncodeJson' spine = case spine of
   SInt x            -> fromNumber $ toNumber x
   SString x         -> fromString x
+  SChar x           -> fromString $ fromChar x
   SNumber x         -> fromNumber x
   SBoolean x        -> fromBoolean x
   SArray thunks     -> fromArray (gEncodeJson' <<< (unit #) <$> thunks)
@@ -102,4 +88,3 @@ instance encodeStrMap :: (EncodeJson a) => EncodeJson (SM.StrMap a) where
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
   encodeJson = encodeJson <<< M.toList
-
