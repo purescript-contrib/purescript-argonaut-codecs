@@ -24,10 +24,10 @@
   "dependencies": {
     "purescript-argonaut-core": "^0.2.0",
     "purescript-integers": "^0.2.1",
-    "purescript-generics": "^0.5.1"
+    "purescript-generics": "^0.6.1"
   },
   "devDependencies": {
-    "purescript-strongcheck": "^0.12.1",
-    "purescript-strongcheck-generics": "^0.1.0"
+    "purescript-strongcheck": "^0.14.1",
+    "purescript-strongcheck-generics": "^0.2.0"
   }
 }
