@@ -14,7 +14,7 @@ import Data.Argonaut.Core (Json(), foldJsonNull, foldJsonBoolean, foldJsonNumber
 import Data.Array (zipWithA)
 import Data.Either (either, Either(..))
 import Data.Foldable (find)
-import Data.Generic (Generic, GenericSpine(..), GenericSignature(..), Proxy(..), fromSpine, toSignature)
+import Data.Generic (Generic, GenericSpine(..), GenericSignature(..), fromSpine, toSignature)
 import Data.Int (fromNumber)
 import Data.List (List(..), toList)
 import Data.Map as Map
@@ -23,6 +23,7 @@ import Data.String (charAt, toChar)
 import Data.StrMap as M
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
+import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
@@ -49,9 +50,10 @@ gDecodeJson' signature json = case signature of
       pf <- mFail ("'" <> lbl <> "' property missing") (M.lookup lbl jObj)
       sp <- gDecodeJson' (val unit) pf
       pure { recLabel: lbl, recValue: const sp }
-  SigProd alts -> do
-    jObj <- mFail "Expected an object" $ toObject json
-    tag  <- mFail "'tag' string property is missing" (toString =<< M.lookup "tag" jObj)
+  SigProd typeConstr alts -> do
+    let decodingErr msg = "When decoding " ++ typeConstr ++ " " ++ msg
+    jObj <- mFail (decodingErr "expected an object") (toObject json)
+    tag  <- mFail (decodingErr "'tag' string property is missing") (toString =<< M.lookup "tag" jObj)
     case find ((tag ==) <<< _.sigConstructor) alts of
       Nothing -> Left ("'" <> tag <> "' isn't a valid constructor")
       Just { sigValues: sigValues } -> do
