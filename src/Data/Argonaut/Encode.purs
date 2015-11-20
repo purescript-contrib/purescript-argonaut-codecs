@@ -12,7 +12,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldr)
 import Data.Generic (Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
-import Data.List (List(..), fromList)
+import Data.List (List(), fromList)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.String (fromChar)
