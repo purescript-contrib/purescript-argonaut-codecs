@@ -13,8 +13,4 @@
 bower install purescript-argonaut-codecs
 ```
 
-## Documentation
-
-- [Data.Argonaut.Encode](docs/Data/Argonaut/Encode.md)
-- [Data.Argonaut.Decode](docs/Data/Argonaut/Decode.md)
-- [Data.Argonaut.Combinators](docs/Data/Argonaut/Combinators.md)
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-argonaut-codecs).
