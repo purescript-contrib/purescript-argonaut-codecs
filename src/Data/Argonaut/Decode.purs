@@ -10,7 +10,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Bind ((=<<))
-import Data.Argonaut.Core (Json(), foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
+import Data.Argonaut.Core (Json(), isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
 import Data.Array (zipWithA)
 import Data.Either (either, Either(..))
 import Data.Foldable (find)
@@ -65,7 +65,9 @@ gDecodeJson' signature json = case signature of
   mFail msg = maybe (Left msg) Right
 
 instance decodeJsonMaybe :: (DecodeJson a) => DecodeJson (Maybe a) where
-  decodeJson j = (Just <$> decodeJson j) <|> pure Nothing
+  decodeJson j
+    | isNull j = pure Nothing
+    | otherwise = (Just <$> decodeJson j) <|> (pure Nothing)
 
 instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a b) where
   decodeJson j = decodeJson j >>= f
