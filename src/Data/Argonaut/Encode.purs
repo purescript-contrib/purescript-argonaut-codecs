@@ -8,11 +8,11 @@ module Data.Argonaut.Encode
 import Prelude
 
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldr)
 import Data.Generic (Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
-import Data.List (List(), fromList)
+import Data.List (List(..), fromList)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.String (fromChar)
@@ -50,8 +50,12 @@ instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a 
   encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
 
 instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either a b) where
-  encodeJson (Left a) = encodeJson a
-  encodeJson (Right b) = encodeJson b
+  encodeJson = either (obj "Left") (obj "Right")
+    where
+    obj :: forall c. (EncodeJson c) => String -> c -> Json
+    obj tag x =
+      fromObject $ SM.fromList $
+        Cons (Tuple "tag" (fromString tag)) (Cons (Tuple "value" (encodeJson x)) Nil)
 
 instance encodeJsonUnit :: EncodeJson Unit where
   encodeJson = const jsonNull
