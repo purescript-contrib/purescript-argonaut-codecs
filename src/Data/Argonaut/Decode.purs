@@ -51,13 +51,14 @@ gDecodeJson' signature json = case signature of
       sp <- gDecodeJson' (val unit) pf
       pure { recLabel: lbl, recValue: const sp }
   SigProd typeConstr alts -> do
-    let decodingErr msg = "When decoding " ++ typeConstr ++ " " ++ msg
+    let decodingErr msg = "When decoding a " ++ typeConstr ++ ": " ++ msg
     jObj <- mFail (decodingErr "expected an object") (toObject json)
-    tag  <- mFail (decodingErr "'tag' string property is missing") (toString =<< M.lookup "tag" jObj)
+    tagJson  <- mFail (decodingErr "'tag' property is missing") (M.lookup "tag" jObj)
+    tag <- mFail (decodingErr "'tag' property is not a string") (toString tagJson)
     case find ((tag ==) <<< _.sigConstructor) alts of
-      Nothing -> Left ("'" <> tag <> "' isn't a valid constructor")
+      Nothing -> Left (decodingErr ("'" <> tag <> "' isn't a valid constructor"))
       Just { sigValues: sigValues } -> do
-        vals <- mFail "'values' array is missing" (toArray =<< M.lookup "values" jObj)
+        vals <- mFail (decodingErr "'values' array is missing") (toArray =<< M.lookup "values" jObj)
         sps  <- zipWithA (\k -> gDecodeJson' (k unit)) sigValues vals
         pure (SProd tag (const <$> sps))
   where
