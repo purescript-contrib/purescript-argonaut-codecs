@@ -183,7 +183,18 @@ genericsCheck = do
                                                              }]}
 
 
+eitherCheck = do
+  log "Test EncodeJson/DecodeJson Either instance"
+  quickCheck \(x :: Either String String) ->
+    case decodeJson (encodeJson x) of
+      Right decoded ->
+        decoded == x
+          <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+      Left err ->
+        false <?> err
+
 main = do
+  eitherCheck
   encodeDecodeCheck
   combinatorsCheck
   genericsCheck
