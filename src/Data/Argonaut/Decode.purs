@@ -77,7 +77,23 @@ instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a 
     f _ = Left "Couldn't decode Tuple"
 
 instance decodeJsonEither :: (DecodeJson a, DecodeJson b) => DecodeJson (Either a b) where
-  decodeJson j = (Left <$> decodeJson j) <|> (Right <$> decodeJson j)
+  decodeJson j =
+    case toObject j of
+      Just obj -> do
+        tag <- just (M.lookup "tag" obj)
+        val <- just (M.lookup "value" obj)
+        case toString tag of
+          Just "Right" ->
+            Right <$> decodeJson val
+          Just "Left" ->
+            Left <$> decodeJson val
+          _ ->
+            Left "Couldn't decode Either"
+      _ ->
+        Left "Couldn't decode Either"
+    where
+    just (Just x) = Right x
+    just Nothing  = Left "Couldn't decode Either"
 
 instance decodeJsonNull :: DecodeJson Unit where
   decodeJson = foldJsonNull (Left "Not null") (const $ Right unit)
