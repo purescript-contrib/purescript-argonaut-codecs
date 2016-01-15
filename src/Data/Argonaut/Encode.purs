@@ -8,7 +8,7 @@ module Data.Argonaut.Encode
 import Prelude
 
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
-import Data.Either (Either(..), either)
+import Data.Either (Either(), either)
 import Data.Foldable (foldr)
 import Data.Generic (Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
