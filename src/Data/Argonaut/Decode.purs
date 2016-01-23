@@ -11,10 +11,11 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Bind ((=<<))
 import Data.Argonaut.Core (Json(), isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
-import Data.Array (zipWithA)
+import Data.Argonaut.Internal
+import Data.Array (zipWithA, length)
 import Data.Either (either, Either(..))
 import Data.Foldable (find)
-import Data.Generic (Generic, GenericSpine(..), GenericSignature(..), fromSpine, toSignature)
+import Data.Generic (Generic, GenericSpine(..), GenericSignature(..), DataConstructor(), fromSpine, toSignature)
 import Data.Int (fromNumber)
 import Data.List (List(..), toList)
 import Data.Map as Map
@@ -64,6 +65,57 @@ gDecodeJson' signature json = case signature of
   where
   mFail :: forall a. String -> Maybe a -> Either String a
   mFail msg = maybe (Left msg) Right
+
+-- | Decode `Json` representation of a value which has a `Generic` type.
+gAesonDecodeJson :: forall a. (Generic a) => Json -> Either String a
+gAesonDecodeJson json = maybe (Left "fromSpine failed") Right <<< fromSpine
+                =<< gAesonDecodeJson' (toSignature (Proxy :: Proxy a)) json
+
+-- | Decode `Json` representation of a `GenericSpine`.
+gAesonDecodeJson' :: GenericSignature -> Json -> Either String GenericSpine
+gAesonDecodeJson' signature json = case signature of
+ SigNumber -> SNumber <$> mFail "Expected a number" (toNumber json)
+ SigInt -> SInt <$> mFail "Expected an integer number" (fromNumber =<< toNumber json)
+ SigString -> SString <$> mFail "Expected a string" (toString json)
+ SigChar -> SChar <$> mFail "Expected a char" (toChar =<< toString json)
+ SigBoolean -> SBoolean <$> mFail "Expected a boolean" (toBoolean json)
+ SigArray thunk -> do
+   jArr <- mFail "Expected an array" $ toArray json
+   SArray <$> traverse (map const <<< gDecodeJson' (thunk unit)) jArr
+ SigRecord props -> do
+   jObj <- mFail "Expected an object" $ toObject json
+   SRecord <$> for props \({recLabel: lbl, recValue: val}) -> do
+     pf <- mFail ("'" <> lbl <> "' property missing") (M.lookup lbl jObj)
+     sp <- gDecodeJson' (val unit) pf
+     pure { recLabel: lbl, recValue: const sp }
+ SigProd typeConstr constrSigns -> gAesonDecodeProdJson' typeConstr constrSigns json
+
+mFail :: forall a. String -> Maybe a -> Either String a
+mFail msg = maybe (Left msg) Right
+
+
+gAesonDecodeProdJson' :: String -> Array DataConstructor -> Json -> Either String GenericSpine
+gAesonDecodeProdJson' tname constrSigns json = if allConstrNullary constrSigns
+                                               then decodeFromString
+                                               else decodeTagged
+  where
+    decodeFromString = do
+      tag <- mFail (decodingErr "Constructor name as string expected") (toString json)
+      pure (SProd tag [])
+    decodeTagged = do
+      jObj <- mFail (decodingErr "expected an object") (toObject json)
+      tagJson  <- mFail (decodingErr "'tag' property is missing") (M.lookup "tag" jObj)
+      tag <- mFail (decodingErr "'tag' property is not a string") (toString tagJson)
+      case find ((tag ==) <<< fixConstr <<< _.sigConstructor) constrSigns of
+        Nothing -> Left (decodingErr ("'" <> tag <> "' isn't a valid constructor"))
+        Just { sigValues: sigValues } -> do
+          jVals <- mFail (decodingErr "'contents' property is missing") (M.lookup "contents" jObj)
+          vals <- case length sigValues of
+                    1 -> pure [jVals]
+                    _  -> mFail (decodingErr "Expected array") (toArray jVals)
+          sps  <- zipWithA (\k -> gAesonDecodeJson' (k unit)) sigValues vals
+          pure (SProd tag (const <$> sps))
+    decodingErr msg = "When decoding a " ++ tname ++ ": " ++ msg
 
 instance decodeJsonMaybe :: (DecodeJson a) => DecodeJson (Maybe a) where
   decodeJson j
