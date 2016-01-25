@@ -3,8 +3,9 @@ module Test.Main where
 import Prelude
 
 import Data.Argonaut.Core
-import Data.Argonaut.Decode (decodeJson, DecodeJson, gDecodeJson, genericDecodeJson', argonautOptions)
-import Data.Argonaut.Encode (encodeJson, EncodeJson, gEncodeJson, genericEncodeJson', argonautOptions)
+import Data.Argonaut.Options
+import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson', argonautOptions)
+import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson', argonautOptions)
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=), (.?))
 import Data.Either
 import Data.Tuple
@@ -143,31 +144,37 @@ data User = Anonymous
                        }
 derive instance genericUser :: Generic User
 
-prop_iso_generic :: GenericValue -> Boolean
-prop_iso_generic genericValue =
-  Right val.spine == genericDecodeJson' argonautOptions val.signature (genericEncodeJson' argonautOptions val.signature val.spine)
+data AllNullary = Nullary1 | Nullary2 | Nullary3
+derive instance genericAllNullary :: Generic AllNullary
+
+data MultipleArgs = MArgs Int Int String | NArgs
+derive instance genericMultipleArgs :: Generic MultipleArgs
+
+prop_iso_generic :: Options -> GenericValue -> Boolean
+prop_iso_generic opts genericValue =
+  Right val.spine == genericDecodeJson' opts val.signature (genericEncodeJson' opts val.signature val.spine)
   where val = runGenericValue genericValue
 
-prop_decoded_spine_valid :: GenericValue -> Boolean
-prop_decoded_spine_valid genericValue =
-  Right true == (isValidSpine val.signature <$> genericDecodeJson' argonautOptions val.signature (genericEncodeJson' argonautOptions val.signature val.spine))
+prop_decoded_spine_valid :: Options -> GenericValue -> Boolean
+prop_decoded_spine_valid opts genericValue =
+  Right true == (isValidSpine val.signature <$> genericDecodeJson' opts val.signature (genericEncodeJson' opts val.signature val.spine))
   where val = runGenericValue genericValue
 
-genericsCheck = do
+genericsCheck opts= do
   log "Check that decodeJson' and encodeJson' form an isomorphism"
-  quickCheck prop_iso_generic
+  quickCheck (prop_iso_generic opts)
   log "Check that decodeJson' returns a valid spine"
-  quickCheck prop_decoded_spine_valid
-  log "Print samples of values encoded with gEncodeJson"
-  print $ gEncodeJson 5
-  print $ gEncodeJson [1, 2, 3, 5]
-  print $ gEncodeJson (Just "foo")
-  print $ gEncodeJson (Right "foo" :: Either String String)
-  print $ gEncodeJson $ MyRecord { foo: "foo", bar: 2}
-  print $ gEncodeJson "foo"
-  print $ gEncodeJson Anonymous
-  print $ gEncodeJson $ Guest "guest's handle"
-  print $ gEncodeJson $ Registered { name: "user1"
+  quickCheck (prop_decoded_spine_valid opts)
+  log "Print samples of values encoded with genericEncodeJson"
+  print $ genericEncodeJson opts 5
+  print $ genericEncodeJson opts [1, 2, 3, 5]
+  print $ genericEncodeJson opts (Just "foo")
+  print $ genericEncodeJson opts (Right "foo" :: Either String String)
+  print $ genericEncodeJson opts $ MyRecord { foo: "foo", bar: 2}
+  print $ genericEncodeJson opts "foo"
+  print $ genericEncodeJson opts Anonymous
+  print $ genericEncodeJson opts $ Guest "guest's handle"
+  print $ genericEncodeJson opts $ Registered { name: "user1"
                                    , age: 5
                                    , balance: 26.6
                                    , banned: false
@@ -181,7 +188,10 @@ genericsCheck = do
                                                              , tweets: ["Hi"]
                                                              , followers: []
                                                              }]}
-
+  print $ genericEncodeJson opts Nullary1
+  print $ genericEncodeJson opts Nullary2
+  print $ genericEncodeJson opts $ MArgs 9 22 "Test"
+  print $ genericEncodeJson opts NArgs
 
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
@@ -197,4 +207,7 @@ main = do
   eitherCheck
   encodeDecodeCheck
   combinatorsCheck
-  genericsCheck
+  log "genericsCheck check for argonautOptions"
+  genericsCheck argonautOptions
+  log "genericsCheck check for aesonOptions"
+  genericsCheck aesonOptions
