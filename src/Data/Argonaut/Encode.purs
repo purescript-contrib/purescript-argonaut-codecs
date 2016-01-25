@@ -2,13 +2,16 @@ module Data.Argonaut.Encode
   ( EncodeJson
   , encodeJson
   , gEncodeJson
-  , gEncodeJson'
+  , gAesonEncodeJson
+  , genericEncodeJson
+  , genericEncodeJson'
+  , module Data.Argonaut.Options
   ) where
 
 import Prelude
 
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
-import Data.Argonaut.Internal
+import Data.Argonaut.Options
 import Data.Either (Either(), either)
 import Data.Foldable (foldr)
 import Data.Generic (Generic, GenericSpine(..), toSpine, GenericSignature(..), DataConstructor(), toSignature)
@@ -21,74 +24,71 @@ import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
 import Type.Proxy (Proxy(..))
 import Data.Tuple (uncurry)
-import Data.Array (null, concatMap, filter, zip)
+import Data.Array (length, concatMap, filter, zip, zipWith)
+import qualified Data.Array.Unsafe as Unsafe
 
 class EncodeJson a where
   encodeJson :: a -> Json
 
--- | Encode any `Generic` data structure into `Json`.
+-- | Encode any `Generic` data structure into `Json`,
+-- | formatted according to argonautOptions
 gEncodeJson :: forall a. (Generic a) => a -> Json
-gEncodeJson = gEncodeJson' <<< toSpine
+gEncodeJson = genericEncodeJson argonautOptions
 
--- | Encode `GenericSpine` into `Json`.
-gEncodeJson' :: GenericSpine -> Json
-gEncodeJson' spine = case spine of
-  SInt x            -> fromNumber $ toNumber x
-  SString x         -> fromString x
-  SChar x           -> fromString $ fromChar x
-  SNumber x         -> fromNumber x
-  SBoolean x        -> fromBoolean x
-  SArray thunks     -> fromArray (gEncodeJson' <<< (unit #) <$> thunks)
-  SProd constr args -> fromObject
-                         $ SM.insert    "tag"    (encodeJson constr)
-                         $ SM.singleton "values" (encodeJson (gEncodeJson' <<< (unit #) <$> args))
-  SRecord fields    -> fromObject $ foldr addField SM.empty fields
-    where addField field = SM.insert field.recLabel
-                                     (gEncodeJson' $ field.recValue unit)
-
-
+-- | Encode any `Generic` data structure into `Json`,
+-- | formatted according to aesonOptions, which is compatible to the default
+-- | encoding used by Aeson from Haskell.
 gAesonEncodeJson :: forall a. (Generic a) => a -> Json
-gAesonEncodeJson = gAesonEncodeJson' sign <<< toSpine
+gAesonEncodeJson = genericEncodeJson aesonOptions
+
+genericEncodeJson :: forall a. (Generic a) => Options -> a -> Json
+genericEncodeJson opts = genericEncodeJson' opts sign <<< toSpine
   where sign = toSignature (Proxy :: Proxy a)
 
 -- | Encode `GenericSpine` into `Json`.
-gAesonEncodeJson' :: GenericSignature -> GenericSpine -> Json
-gAesonEncodeJson' sign spine = case spine of
+genericEncodeJson' :: Options -> GenericSignature -> GenericSpine -> Json
+genericEncodeJson' opts sign spine = case spine of
  SInt x            -> fromNumber $ toNumber x
  SString x         -> fromString x
  SChar x           -> fromString $ fromChar x
  SNumber x         -> fromNumber x
  SBoolean x        -> fromBoolean x
- SArray thunks     -> fromArray (gAesonEncodeJson' sign <<< (unit #) <$> thunks)
+ SArray thunks     -> case sign of
+                        SigArray elemSign -> fromArray (genericEncodeJson' opts (elemSign unit) <<< (unit #) <$> thunks)
+                        --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
  SProd constr args -> case sign of
-                        SigProd _ constrSigns -> gAesonEncodeProdJson' constrSigns constr args
+                        SigProd _ constrSigns -> genericEncodeProdJson' opts constrSigns constr args
                       --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
  SRecord fields    -> case sign of
-                        SigRecord sigs -> gAesonEncodeRecordJson' sigs fields
+                        SigRecord sigs -> genericEncodeRecordJson' opts sigs fields
                         --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
 
-gAesonEncodeRecordJson' :: Array { recLabel :: String, recValue :: Unit -> GenericSignature }
+genericEncodeRecordJson' :: Options
+                        -> Array { recLabel :: String, recValue :: Unit -> GenericSignature }
                         -> Array { recLabel :: String, recValue :: Unit -> GenericSpine }
                         -> Json
-gAesonEncodeRecordJson' sigs fields = fromObject <<< foldr (uncurry addField) SM.empty $ zip sigs fields
+genericEncodeRecordJson' opts sigs fields = fromObject <<< foldr (uncurry addField) SM.empty $ zip sigs fields
   where
-    addField sig field = SM.insert field.recLabel (gAesonEncodeJson' (sig.recValue unit) (field.recValue unit))
+    addField sig field = SM.insert field.recLabel (genericEncodeJson' opts (sig.recValue unit) (field.recValue unit))
 
-gAesonEncodeProdJson' :: Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Json
-gAesonEncodeProdJson' constrSigns constr args = fromObject
-                                          $ SM.insert "tag" (encodeJson (fixConstr constr))
-                                          $ SM.singleton "contents" flattenedArgs
+genericEncodeProdJson' :: Options -> Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Json
+genericEncodeProdJson' opts constrSigns constr args = fromObject
+                                          $ SM.insert sumConf.tagFieldName (encodeJson fixedConstr)
+                                          $ SM.singleton sumConf.contentsFieldName flattenedArgs
   where
-    contents         = if allConstrNullary constrSigns -- If no constructor has any values - serialize as string ...
-                       then fromString constr
-                       else flattenedArgs
-    encodedArgs      = gAesonEncodeProdArgs constrSigns constr args
-    flattenedArgs    = case encodedArgs of
-                        [a] -> a
-                        as  -> encodeJson as
+    sumConf            = case opts. sumEncoding of
+                          TaggedObject conf -> conf
+    fixedConstr        = opts.constructorTagModifier constr
+    contents           = if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
+                         then fromString constr
+                         else flattenedArgs
+    encodedArgs        = genericEncodeProdArgs opts constrSigns constr args
+    flattenedArgs      = if opts.flattenContentsArray && length encodedArgs == 1
+                         then Unsafe.head encodedArgs
+                         else encodeJson encodedArgs
 
-gAesonEncodeProdArgs :: Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Array (Json)
-gAesonEncodeProdArgs constrSigns constr args = gAesonEncodeJson' <$> sigValues <*> values
+genericEncodeProdArgs :: Options -> Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Array (Json)
+genericEncodeProdArgs opts constrSigns constr args = zipWith (genericEncodeJson' opts) sigValues values
   where
    lSigValues = concatMap (\c -> c.sigValues)
                    <<< filter (\c -> c.sigConstructor == constr) $ constrSigns

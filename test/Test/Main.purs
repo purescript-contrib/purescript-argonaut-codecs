@@ -3,8 +3,8 @@ module Test.Main where
 import Prelude
 
 import Data.Argonaut.Core
-import Data.Argonaut.Decode (decodeJson, DecodeJson, gDecodeJson, gDecodeJson')
-import Data.Argonaut.Encode (encodeJson, EncodeJson, gEncodeJson, gEncodeJson')
+import Data.Argonaut.Decode (decodeJson, DecodeJson, gDecodeJson, genericDecodeJson', argonautOptions)
+import Data.Argonaut.Encode (encodeJson, EncodeJson, gEncodeJson, genericEncodeJson', argonautOptions)
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=), (.?))
 import Data.Either
 import Data.Tuple
@@ -145,12 +145,12 @@ derive instance genericUser :: Generic User
 
 prop_iso_generic :: GenericValue -> Boolean
 prop_iso_generic genericValue =
-  Right val.spine == gDecodeJson' val.signature (gEncodeJson' val.spine)
+  Right val.spine == genericDecodeJson' argonautOptions val.signature (genericEncodeJson' argonautOptions val.signature val.spine)
   where val = runGenericValue genericValue
 
 prop_decoded_spine_valid :: GenericValue -> Boolean
 prop_decoded_spine_valid genericValue =
-  Right true == (isValidSpine val.signature <$> gDecodeJson' val.signature (gEncodeJson' val.spine))
+  Right true == (isValidSpine val.signature <$> genericDecodeJson' argonautOptions val.signature (genericEncodeJson' argonautOptions val.signature val.spine))
   where val = runGenericValue genericValue
 
 genericsCheck = do
