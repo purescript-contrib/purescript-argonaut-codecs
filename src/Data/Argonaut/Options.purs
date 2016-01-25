@@ -1,7 +1,7 @@
 module Data.Argonaut.Options where
 
 import Prelude
-import Data.Foldable (foldr)
+import Data.Foldable (all)
 import Data.String (lastIndexOf, drop)
 import Data.Generic (DataConstructor())
 import Data.Array (null)
@@ -51,7 +51,7 @@ aesonSumEncoding = TaggedObject {
 
 
 allConstructorsNullary :: Array DataConstructor -> Boolean
-allConstructorsNullary constrSigns = foldr (&&) true <<< map (\c -> null c.sigValues) $ constrSigns
+allConstructorsNullary constrSigns = all (null <<< _.sigValues) $ constrSigns
 
 stripModulePath :: String -> String
 stripModulePath constr = case lastIndexOf "." constr of
