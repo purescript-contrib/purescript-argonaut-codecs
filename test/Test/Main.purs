@@ -6,22 +6,24 @@ import Data.Argonaut.Core
 import Data.Argonaut.Options
 import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson')
 import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson')
-import Data.Argonaut.Combinators ((:=), (~>), (?>>=), (.?))
+import Data.Argonaut.Combinators ((:=), (~>), (?>>=))
 import Data.Either
 import Data.Tuple
 import Data.Maybe
 import Data.Array
 import Data.Generic
 import Data.Foldable (foldl)
-import Data.List (toList, List(..))
+import Data.List (toList)
 
+import Control.Monad.Eff (Eff())
+import Control.Monad.Eff.Exception (EXCEPTION())
+import Control.Monad.Eff.Random (RANDOM())
 import Control.Monad.Eff.Console
 import qualified Data.StrMap as M
 
 import Test.StrongCheck
 import Test.StrongCheck.Gen
 import Test.StrongCheck.Generic
-import Type.Proxy
 
 genJNull :: Gen Json
 genJNull = pure jsonNull
@@ -70,7 +72,7 @@ prop_decode_then_encode (TestJson json) =
   let decoded = (decodeJson json) :: Either String Json in
   Right json == (decoded >>= (encodeJson >>> pure))
 
-
+encodeDecodeCheck :: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
 encodeDecodeCheck = do
   log "Showing small sample of JSON"
   showSample (genJson 10)
@@ -121,7 +123,7 @@ assert_maybe_msg =
 
 
 
-
+combinatorsCheck :: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
 combinatorsCheck = do
   log "Check assoc builder `:=`"
   quickCheck' 20 prop_assoc_builder_str
@@ -176,6 +178,7 @@ prop_decoded_spine_valid opts genericValue =
   Right true == (isValidSpine val.signature <$> genericDecodeJson' opts val.signature (genericEncodeJson' opts val.signature val.spine))
   where val = runGenericValue genericValue
 
+genericsCheck :: forall e. Options -> Eff ( err :: EXCEPTION , random :: RANDOM , console :: CONSOLE | e) Unit
 genericsCheck opts= do
   let vNullary = Nullary2
   let mArgs = MArgs 9 20 "Hello"
@@ -227,6 +230,7 @@ genericsCheck opts= do
       where result false = " ##########FAILED########!"
             result true  = " ok."
 
+eitherCheck :: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->
@@ -237,6 +241,7 @@ eitherCheck = do
       Left err ->
         false <?> err
 
+main:: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
 main = do
   eitherCheck
   encodeDecodeCheck
