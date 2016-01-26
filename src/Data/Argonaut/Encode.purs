@@ -72,18 +72,17 @@ genericEncodeRecordJson' opts sigs fields = fromObject <<< foldr (uncurry addFie
     addField sig field = SM.insert field.recLabel (genericEncodeJson' opts (sig.recValue unit) (field.recValue unit))
 
 genericEncodeProdJson' :: Options -> Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Json
-genericEncodeProdJson' opts constrSigns constr args = fromObject
-                                          $ SM.insert sumConf.tagFieldName (encodeJson fixedConstr)
-                                          $ SM.singleton sumConf.contentsFieldName flattenedArgs
+genericEncodeProdJson' opts constrSigns constr args = if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
+                                                      then fromString fixedConstr
+                                                      else fromObject
+                                                          $ SM.insert sumConf.tagFieldName (encodeJson fixedConstr)
+                                                          $ SM.singleton sumConf.contentsFieldName contents
   where
     sumConf            = case opts. sumEncoding of
                           TaggedObject conf -> conf
     fixedConstr        = opts.constructorTagModifier constr
-    contents           = if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
-                         then fromString constr
-                         else flattenedArgs
     encodedArgs        = genericEncodeProdArgs opts constrSigns constr args
-    flattenedArgs      = if opts.flattenContentsArray && length encodedArgs == 1
+    contents           = if opts.flattenContentsArray && length encodedArgs == 1
                          then Unsafe.head encodedArgs
                          else encodeJson encodedArgs
 

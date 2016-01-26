@@ -4,8 +4,8 @@ import Prelude
 
 import Data.Argonaut.Core
 import Data.Argonaut.Options
-import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson', argonautOptions)
-import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson', argonautOptions)
+import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson')
+import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson')
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=), (.?))
 import Data.Either
 import Data.Tuple
@@ -14,12 +14,14 @@ import Data.Array
 import Data.Generic
 import Data.Foldable (foldl)
 import Data.List (toList, List(..))
+
 import Control.Monad.Eff.Console
 import qualified Data.StrMap as M
 
 import Test.StrongCheck
 import Test.StrongCheck.Gen
 import Test.StrongCheck.Generic
+import Type.Proxy
 
 genJNull :: Gen Json
 genJNull = pure jsonNull
@@ -144,11 +146,16 @@ data User = Anonymous
                        }
 derive instance genericUser :: Generic User
 
+
 data AllNullary = Nullary1 | Nullary2 | Nullary3
 derive instance genericAllNullary :: Generic AllNullary
+instance genericEqAllNullary :: Eq AllNullary where
+  eq = gEq
 
 data MultipleArgs = MArgs Int Int String | NArgs
 derive instance genericMultipleArgs :: Generic MultipleArgs
+instance genericEqMArgs :: Eq MultipleArgs where
+  eq = gEq
 
 prop_iso_generic :: Options -> GenericValue -> Boolean
 prop_iso_generic opts genericValue =
@@ -161,7 +168,11 @@ prop_decoded_spine_valid opts genericValue =
   where val = runGenericValue genericValue
 
 genericsCheck opts= do
+  let vNullary = Nullary2
+  let mArgs = MArgs 9 20 "Hello"
   log "Check that decodeJson' and encodeJson' form an isomorphism"
+  logError " Check all nullary:" (aesonEncodeDecode vNullary)
+  logError " Check multiple args:" (aesonEncodeDecode mArgs)
   quickCheck (prop_iso_generic opts)
   log "Check that decodeJson' returns a valid spine"
   quickCheck (prop_decoded_spine_valid opts)
@@ -193,6 +204,14 @@ genericsCheck opts= do
   print $ genericEncodeJson opts $ MArgs 9 22 "Test"
   print $ genericEncodeJson opts NArgs
 
+  where
+    aesonEncodeDecode :: forall a. (Eq a, Generic a) => a -> Boolean
+    aesonEncodeDecode val = ((Right val) ==) <<< genericDecodeJson aesonOptions <<< genericEncodeJson aesonOptions $ val
+
+    logError message test = log $ message ++ result test
+      where result false = " ##########FAILED########!"
+            result true  = " ok."
+            
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->

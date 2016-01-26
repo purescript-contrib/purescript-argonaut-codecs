@@ -74,25 +74,27 @@ genericDecodeProdJson' opts tname constrSigns json = if opts.allNullaryToStringT
   where
     decodeFromString = do
       tag <- mFail (decodingErr "Constructor name as string expected") (toString json)
-      pure (SProd tag [])
+      foundConstr <- findConstrFail tag
+      pure (SProd foundConstr.sigConstructor [])
     decodeTagged = do
       jObj <- mFail (decodingErr "expected an object") (toObject json)
       tagJson  <- mFail (decodingErr "'" ++ tagL ++ "' property is missing") (M.lookup tagL jObj)
       tag <- mFail (decodingErr "'" ++ tagL ++ "' property is not a string") (toString tagJson)
-      case find ((tag ==) <<< fixConstr <<< _.sigConstructor) constrSigns of
-        Nothing -> Left (decodingErr ("'" <> tag <> "' isn't a valid constructor"))
-        Just { sigValues: sigValues } -> do
-          jVals <- mFail (decodingErr "'" ++ contL ++ "' property is missing") (M.lookup contL jObj)
-          vals <- if opts.flattenContentsArray && (length sigValues == 1)
-                  then pure [jVals]
-                  else mFail (decodingErr "Expected array") (toArray jVals)
-          sps  <- zipWithA (\k -> genericDecodeJson' opts (k unit)) sigValues vals
-          pure (SProd tag (const <$> sps))
+      foundConstr <-  findConstrFail tag
+      jVals <- mFail (decodingErr "'" ++ contL ++ "' property is missing") (M.lookup contL jObj)
+      vals <- if opts.flattenContentsArray && (length foundConstr.sigValues == 1)
+              then pure [jVals]
+              else mFail (decodingErr "Expected array") (toArray jVals)
+      sps  <- zipWithA (\k -> genericDecodeJson' opts (k unit)) foundConstr.sigValues vals
+      pure (SProd foundConstr.sigConstructor (const <$> sps))
+      
     decodingErr msg = "When decoding a " ++ tname ++ ": " ++ msg
     fixConstr      = opts.constructorTagModifier
     sumConf = case opts.sumEncoding of TaggedObject conf -> conf
     tagL = sumConf.tagFieldName
     contL = sumConf.contentsFieldName
+    findConstrFail tag = mFail (decodingErr ("'" <> tag <> "' isn't a valid constructor")) (findConstr tag)
+    findConstr tag = find ((tag ==) <<< fixConstr <<< _.sigConstructor) constrSigns
 
 instance decodeJsonMaybe :: (DecodeJson a) => DecodeJson (Maybe a) where
   decodeJson j
