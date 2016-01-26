@@ -28,6 +28,7 @@ import Data.StrMap as M
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
 import Type.Proxy (Proxy(..))
+import qualified Data.Array.Unsafe as Unsafe
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
@@ -68,9 +69,17 @@ genericDecodeJson' opts signature json = case signature of
  SigProd typeConstr constrSigns -> genericDecodeProdJson' opts typeConstr constrSigns json
 
 genericDecodeProdJson' :: Options ->  String -> Array DataConstructor -> Json -> Either String GenericSpine
-genericDecodeProdJson' opts tname constrSigns json = if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
-                                                     then decodeFromString
-                                                     else decodeTagged
+genericDecodeProdJson' opts tname constrSigns json =
+  if opts.unwrapUnaryRecords && isUnaryRecord constrSigns
+  then do
+    let constr = Unsafe.head constrSigns
+    let unwrapped = Unsafe.head constr.sigValues unit
+    r <- genericDecodeJson' opts unwrapped json
+    pure (SProd constr.sigConstructor [const r])
+  else
+    if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
+    then decodeFromString
+    else decodeTagged
   where
     decodeFromString = do
       tag <- mFail (decodingErr "Constructor name as string expected") (toString json)

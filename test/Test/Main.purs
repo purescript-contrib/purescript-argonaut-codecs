@@ -157,6 +157,15 @@ derive instance genericMultipleArgs :: Generic MultipleArgs
 instance genericEqMArgs :: Eq MultipleArgs where
   eq = gEq
 
+newtype NewTypeWrapper1 = NewTypeWrapper1 { test :: String }
+derive instance genericNewTypeWrapper1 :: Generic NewTypeWrapper1
+instance eqNewTypeWrapper1 :: Eq NewTypeWrapper1 where
+  eq = gEq
+data NewTypeWrapper2 = NewTypeWrapper2 {test :: Int}
+derive instance genericNewTypeWrapper2 :: Generic NewTypeWrapper2
+instance eqNewTypeWrapper2 :: Eq NewTypeWrapper2 where
+  eq = gEq
+
 prop_iso_generic :: Options -> GenericValue -> Boolean
 prop_iso_generic opts genericValue =
   Right val.spine == genericDecodeJson' opts val.signature (genericEncodeJson' opts val.signature val.spine)
@@ -170,9 +179,13 @@ prop_decoded_spine_valid opts genericValue =
 genericsCheck opts= do
   let vNullary = Nullary2
   let mArgs = MArgs 9 20 "Hello"
+  let ntw1 = NewTypeWrapper1 { test : "hello" }
+  let ntw2 = NewTypeWrapper2 { test : 9 }
   log "Check that decodeJson' and encodeJson' form an isomorphism"
-  logError " Check all nullary:" (aesonEncodeDecode vNullary)
-  logError " Check multiple args:" (aesonEncodeDecode mArgs)
+  logError " Check all nullary:" (valEncodeDecode opts vNullary)
+  logError " Check multiple args:" (valEncodeDecode opts mArgs)
+  logError " Check new type wrapper (1) encoding:" (valEncodeDecode opts ntw1)
+  logError " Check new type wrapper (2) encoding:" (valEncodeDecode opts ntw2)
   quickCheck (prop_iso_generic opts)
   log "Check that decodeJson' returns a valid spine"
   quickCheck (prop_decoded_spine_valid opts)
@@ -203,15 +216,17 @@ genericsCheck opts= do
   print $ genericEncodeJson opts Nullary2
   print $ genericEncodeJson opts $ MArgs 9 22 "Test"
   print $ genericEncodeJson opts NArgs
+  print $ genericEncodeJson opts ntw1
+  print $ genericEncodeJson opts ntw2
 
   where
-    aesonEncodeDecode :: forall a. (Eq a, Generic a) => a -> Boolean
-    aesonEncodeDecode val = ((Right val) ==) <<< genericDecodeJson aesonOptions <<< genericEncodeJson aesonOptions $ val
+    valEncodeDecode :: forall a. (Eq a, Generic a) => Options ->  a -> Boolean
+    valEncodeDecode opts val = ((Right val) ==) <<< genericDecodeJson opts <<< genericEncodeJson opts $ val
 
     logError message test = log $ message ++ result test
       where result false = " ##########FAILED########!"
             result true  = " ok."
-            
+
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->
@@ -230,3 +245,6 @@ main = do
   genericsCheck argonautOptions
   log "genericsCheck check for aesonOptions"
   genericsCheck aesonOptions
+  log "genericsCheck check for unwrapUnaryOptions"
+  let unwrapUnaryOptions = aesonOptions { unwrapUnaryRecords = true }
+  genericsCheck unwrapUnaryOptions

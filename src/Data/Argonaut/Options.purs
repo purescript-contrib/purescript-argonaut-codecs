@@ -4,7 +4,7 @@ import Prelude
 import Data.Foldable (all)
 import Data.String (lastIndexOf, drop)
 import Data.Generic (DataConstructor())
-import Data.Array (null)
+import Data.Array (null, length)
 import Data.Maybe (Maybe(..))
 
 
@@ -17,6 +17,9 @@ type Options = {
 , sumEncoding             :: SumEncoding
   -- | If a constructor has exactly one field, do not serialize as array.
 , flattenContentsArray    :: Boolean -- Flatten array to simple value, if constructor only takes a single value
+  -- | You need a newtype wrapper encoding/decoding of records, set this
+  -- | to true if you want the plain Javascript object without a wrapping tagged object.
+, unwrapUnaryRecords :: Boolean
 }
 
 data SumEncoding =
@@ -37,6 +40,7 @@ argonautOptions = {
 , allNullaryToStringTag  : false
 , sumEncoding            : argonautSumEncoding
 , flattenContentsArray   : false
+, unwrapUnaryRecords     : false
 }
 
 argonautSumEncoding :: SumEncoding
@@ -52,6 +56,7 @@ aesonOptions = {
 , allNullaryToStringTag  : true
 , sumEncoding            : aesonSumEncoding
 , flattenContentsArray   : true
+, unwrapUnaryRecords     : false
 }
 
 aesonSumEncoding :: SumEncoding
@@ -63,7 +68,11 @@ aesonSumEncoding = TaggedObject {
 
 
 allConstructorsNullary :: Array DataConstructor -> Boolean
-allConstructorsNullary constrSigns = all (null <<< _.sigValues) $ constrSigns
+allConstructorsNullary = all (null <<< _.sigValues)
+
+isUnaryRecord :: Array DataConstructor -> Boolean
+isUnaryRecord constrSigns = length constrSigns == 1 -- Only one constructor
+                            && all ((== 1) <<< length <<< _.sigValues)  constrSigns -- Only one parameter
 
 stripModulePath :: String -> String
 stripModulePath constr = case lastIndexOf "." constr of
