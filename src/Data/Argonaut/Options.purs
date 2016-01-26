@@ -9,17 +9,28 @@ import Data.Maybe (Maybe(..))
 
 
 type Options = {
+  -- | Modify the tag, e.g. strip module path with: `stripModulePath`
   constructorTagModifier  :: String -> String
+  -- | If all constructors of a sum type are nullary, just serialize the constructor name as a string.
 , allNullaryToStringTag   :: Boolean
+  -- | Options on how to do encoding of sum types.
 , sumEncoding             :: SumEncoding
+  -- | If a constructor has exactly one field, do not serialize as array.
 , flattenContentsArray    :: Boolean -- Flatten array to simple value, if constructor only takes a single value
 }
 
-data SumEncoding = TaggedObject {
-  tagFieldName :: String
-, contentsFieldName :: String
-}
+data SumEncoding =
+  -- | Serialize as tagged object.
+  -- | The Javascript object will have a tag field, with the
+  -- | `constructorTagModifier constructorName` name as contents
+  -- | and a contents field, which contains an array with the constructor
+  -- | parameters.
+  TaggedObject {
+    tagFieldName :: String
+  , contentsFieldName :: String
+  }
 
+-- | Default for straight forward argonaut encoding.
 argonautOptions :: Options
 argonautOptions = {
   constructorTagModifier : id
@@ -34,6 +45,7 @@ argonautSumEncoding = TaggedObject {
 , contentsFieldName      : "values"
 }
 
+-- | Options for aeson compatible encoding/decoding.
 aesonOptions :: Options
 aesonOptions = {
   constructorTagModifier : stripModulePath
