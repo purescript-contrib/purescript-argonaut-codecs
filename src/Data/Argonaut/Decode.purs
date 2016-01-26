@@ -87,10 +87,12 @@ genericDecodeProdJson' opts tname constrSigns json = if opts.allNullaryToStringT
               else mFail (decodingErr "Expected array") (toArray jVals)
       sps  <- zipWithA (\k -> genericDecodeJson' opts (k unit)) foundConstr.sigValues vals
       pure (SProd foundConstr.sigConstructor (const <$> sps))
-      
+
     decodingErr msg = "When decoding a " ++ tname ++ ": " ++ msg
     fixConstr      = opts.constructorTagModifier
-    sumConf = case opts.sumEncoding of TaggedObject conf -> conf
+    sumConf = case opts.sumEncoding of
+      TaggedObject conf -> conf
+      --  _ -> unsafeCrashWith "Only TaggedObject encoding is supported - FIX ME!" -- Not yet supported, waiting for purescript 0.8
     tagL = sumConf.tagFieldName
     contL = sumConf.contentsFieldName
     findConstrFail tag = mFail (decodingErr ("'" <> tag <> "' isn't a valid constructor")) (findConstr tag)
