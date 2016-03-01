@@ -26,6 +26,7 @@ import Type.Proxy (Proxy(..))
 import Data.Tuple (uncurry)
 import Data.Array (length, concatMap, filter, zip, zipWith)
 import qualified Data.Array.Unsafe as Unsafe
+import Partial.Unsafe (unsafeCrashWith)
 
 class EncodeJson a where
   encodeJson :: a -> Json
@@ -55,13 +56,13 @@ genericEncodeJson' opts sign spine = case spine of
  SBoolean x        -> fromBoolean x
  SArray thunks     -> case sign of
                         SigArray elemSign -> fromArray (genericEncodeJson' opts (elemSign unit) <<< (unit #) <$> thunks)
-                        --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
  SProd constr args -> case sign of
                         SigProd _ constrSigns -> genericEncodeProdJson' opts constrSigns constr args
-                      --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
  SRecord fields    -> case sign of
                         SigRecord sigs -> genericEncodeRecordJson' opts sigs fields
-                        --  _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
 
 genericEncodeRecordJson' :: Options
                         -> Array { recLabel :: String, recValue :: Unit -> GenericSignature }
