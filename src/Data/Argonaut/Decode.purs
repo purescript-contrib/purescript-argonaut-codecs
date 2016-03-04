@@ -27,6 +27,7 @@ import Data.String (charAt, toChar)
 import Data.StrMap as M
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
+import Partial.Unsafe (unsafeCrashWith)
 import Type.Proxy (Proxy(..))
 import qualified Data.Array.Unsafe as Unsafe
 
@@ -101,7 +102,7 @@ genericDecodeProdJson' opts tname constrSigns json =
     fixConstr      = opts.constructorTagModifier
     sumConf = case opts.sumEncoding of
       TaggedObject conf -> conf
-      --  _ -> unsafeCrashWith "Only TaggedObject encoding is supported - FIX ME!" -- Not yet supported, waiting for purescript 0.8
+      _ -> unsafeCrashWith "Only TaggedObject encoding is supported - FIX ME!" -- Not yet supported, waiting for purescript 0.8
     tagL = sumConf.tagFieldName
     contL = sumConf.contentsFieldName
     findConstrFail tag = mFail (decodingErr ("'" <> tag <> "' isn't a valid constructor")) (findConstr tag)
