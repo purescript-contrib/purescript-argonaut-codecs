@@ -1,14 +1,16 @@
 module Data.Argonaut.Options where
 
 import Prelude
+import Data.Argonaut.Core (Json())
 import Data.Foldable (all)
 import Data.String (lastIndexOf, drop)
 import Data.Generic (DataConstructor())
 import Data.Array (null, length)
+import Data.Generic (Generic, GenericSpine(..), toSpine, GenericSignature(..), DataConstructor(), toSignature)
 import Data.Maybe (Maybe(..))
 
 
-type Options = {
+newtype Options = Options { -- newtype necessary to avoid: https://github.com/purescript/purescript/wiki/Error-Code-CycleInTypeSynonym
   -- | Modify the tag, e.g. strip module path with: `stripModulePath`
   constructorTagModifier  :: String -> String
   -- | If all constructors of a sum type are nullary, just serialize the constructor name as a string.
@@ -20,6 +22,12 @@ type Options = {
   -- | You need a newtype wrapper encoding/decoding of records, set this
   -- | to true if you want the plain Javascript object without a wrapping tagged object.
 , unwrapUnaryRecords :: Boolean
+-- | You can choose to encode some data types differently than the generic default.
+-- | Just return Nothing if you want to relay to generic encoding.
+, userEncoding :: Options -> GenericSignature -> GenericSpine -> Maybe Json
+-- | You can choose to decode some data types differently than the generic default.
+-- | Just return Nothing, to relay to generic decoding.
+, userDecoding :: Options -> GenericSignature -> Json -> Maybe GenericSpine
 }
 
 data SumEncoding =
@@ -35,12 +43,14 @@ data SumEncoding =
 
 -- | Default for straight forward argonaut encoding.
 argonautOptions :: Options
-argonautOptions = {
+argonautOptions = Options {
   constructorTagModifier : id
 , allNullaryToStringTag  : false
 , sumEncoding            : argonautSumEncoding
 , flattenContentsArray   : false
 , unwrapUnaryRecords     : false
+, userEncoding           : dummyUserEncoding
+, userDecoding           : dummyUserDecoding
 }
 
 argonautSumEncoding :: SumEncoding
@@ -49,23 +59,11 @@ argonautSumEncoding = TaggedObject {
 , contentsFieldName      : "values"
 }
 
--- | Options for aeson compatible encoding/decoding.
-aesonOptions :: Options
-aesonOptions = {
-  constructorTagModifier : stripModulePath
-, allNullaryToStringTag  : true
-, sumEncoding            : aesonSumEncoding
-, flattenContentsArray   : true
-, unwrapUnaryRecords     : false
-}
+dummyUserEncoding :: Options -> GenericSignature -> GenericSpine -> Maybe Json
+dummyUserEncoding _ _ _ = Nothing
 
-aesonSumEncoding :: SumEncoding
-aesonSumEncoding = TaggedObject {
-  tagFieldName           : "tag"
-, contentsFieldName      : "contents"
-}
-
-
+dummyUserDecoding :: Options -> GenericSignature -> Json -> Maybe GenericSpine
+dummyUserDecoding _ _ _ = Nothing
 
 allConstructorsNullary :: Array DataConstructor -> Boolean
 allConstructorsNullary = all (null <<< _.sigValues)

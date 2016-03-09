@@ -2,7 +2,6 @@ module Data.Argonaut.Decode
   ( DecodeJson
   , decodeJson
   , gDecodeJson
-  , gAesonDecodeJson
   , genericDecodeJson
   , genericDecodeJson'
   , decodeMaybe
@@ -39,12 +38,6 @@ class DecodeJson a where
 gDecodeJson :: forall a. (Generic a) => Json -> Either String a
 gDecodeJson = genericDecodeJson argonautOptions
 
--- | Decode `Json` representation of a value which has a `Generic` type
--- | with Aeson options. Data from Haskell, with Aeson default options can be
--- | decoded with gAesonDecodJson.
-gAesonDecodeJson :: forall a. (Generic a) => Json -> Either String a
-gAesonDecodeJson = genericDecodeJson aesonOptions
-
 -- | Decode `Json` representation of a value which has a `Generic` type.
 genericDecodeJson :: forall a. (Generic a) => Options -> Json -> Either String a
 genericDecodeJson opts json = maybe (Left "fromSpine failed") Right <<< fromSpine
@@ -70,12 +63,12 @@ genericDecodeJson' opts signature json = case signature of
  SigProd typeConstr constrSigns -> genericDecodeProdJson' opts typeConstr constrSigns json
 
 genericDecodeProdJson' :: Options ->  String -> Array DataConstructor -> Json -> Either String GenericSpine
-genericDecodeProdJson' opts tname constrSigns json =
+genericDecodeProdJson' opts'@(Options opts) tname constrSigns json =
   if opts.unwrapUnaryRecords && isUnaryRecord constrSigns
   then do
     let constr = Unsafe.head constrSigns
     let unwrapped = Unsafe.head constr.sigValues unit
-    r <- genericDecodeJson' opts unwrapped json
+    r <- genericDecodeJson' opts' unwrapped json
     pure (SProd constr.sigConstructor [const r])
   else
     if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
@@ -95,7 +88,7 @@ genericDecodeProdJson' opts tname constrSigns json =
       vals <- if opts.flattenContentsArray && (length foundConstr.sigValues == 1)
               then pure [jVals]
               else mFail (decodingErr "Expected array") (toArray jVals)
-      sps  <- zipWithA (\k -> genericDecodeJson' opts (k unit)) foundConstr.sigValues vals
+      sps  <- zipWithA (\k -> genericDecodeJson' opts' (k unit)) foundConstr.sigValues vals
       pure (SProd foundConstr.sigConstructor (const <$> sps))
 
     decodingErr msg = "When decoding a " ++ tname ++ ": " ++ msg

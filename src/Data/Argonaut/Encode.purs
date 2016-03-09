@@ -2,9 +2,9 @@ module Data.Argonaut.Encode
   ( EncodeJson
   , encodeJson
   , gEncodeJson
-  , gAesonEncodeJson
   , genericEncodeJson
   , genericEncodeJson'
+  , genericUserEncodeJson'
   , module Data.Argonaut.Options
   ) where
 
@@ -18,7 +18,7 @@ import Data.Generic (Generic, GenericSpine(..), toSpine, GenericSignature(..), D
 import Data.Int (toNumber)
 import Data.List (List(..), fromList)
 import Data.Map as M
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (fromChar)
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
@@ -36,17 +36,19 @@ class EncodeJson a where
 gEncodeJson :: forall a. (Generic a) => a -> Json
 gEncodeJson = genericEncodeJson argonautOptions
 
--- | Encode any `Generic` data structure into `Json`,
--- | formatted according to aesonOptions, which is compatible to the default
--- | encoding used by Aeson from Haskell.
-gAesonEncodeJson :: forall a. (Generic a) => a -> Json
-gAesonEncodeJson = genericEncodeJson aesonOptions
-
 genericEncodeJson :: forall a. (Generic a) => Options -> a -> Json
-genericEncodeJson opts = genericEncodeJson' opts sign <<< toSpine
+genericEncodeJson opts = genericUserEncodeJson' opts sign <<< toSpine
   where sign = toSignature (Proxy :: Proxy a)
 
+
+-- | Generically encode to json, using a supplied userEncoding, falling back to genericEncodeJson':
+genericUserEncodeJson' :: Options -> GenericSignature -> GenericSpine -> Json
+genericUserEncodeJson' opts'@(Options opts) sign spine = fromMaybe (genericEncodeJson' opts' sign spine)
+                                                        (opts.userEncoding opts' sign spine)
+
 -- | Encode `GenericSpine` into `Json`.
+-- | This function is mutually recursive with `genericUserEncodeJson'`, as for all descendent spines
+-- | `genericUserEncodeJson'` is invoked.
 genericEncodeJson' :: Options -> GenericSignature -> GenericSpine -> Json
 genericEncodeJson' opts sign spine = case spine of
  SInt x            -> fromNumber $ toNumber x
@@ -55,14 +57,14 @@ genericEncodeJson' opts sign spine = case spine of
  SNumber x         -> fromNumber x
  SBoolean x        -> fromBoolean x
  SArray thunks     -> case sign of
-                        SigArray elemSign -> fromArray (genericEncodeJson' opts (elemSign unit) <<< (unit #) <$> thunks)
-                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        SigArray elemSign -> fromArray (genericUserEncodeJson' opts (elemSign unit) <<< (unit #) <$> thunks)
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!"
  SProd constr args -> case sign of
                         SigProd _ constrSigns -> genericEncodeProdJson' opts constrSigns constr args
-                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!"
  SRecord fields    -> case sign of
                         SigRecord sigs -> genericEncodeRecordJson' opts sigs fields
-                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!" -- Not yet supported, waiting for purescript 0.8
+                        _ -> unsafeCrashWith "Signature does not match value, please don't do that!"
 
 genericEncodeRecordJson' :: Options
                         -> Array { recLabel :: String, recValue :: Unit -> GenericSignature }
@@ -70,13 +72,13 @@ genericEncodeRecordJson' :: Options
                         -> Json
 genericEncodeRecordJson' opts sigs fields = fromObject <<< foldr (uncurry addField) SM.empty $ zip sigs fields
   where
-    addField sig field = SM.insert field.recLabel (genericEncodeJson' opts (sig.recValue unit) (field.recValue unit))
+    addField sig field = SM.insert field.recLabel (genericUserEncodeJson' opts (sig.recValue unit) (field.recValue unit))
 
 genericEncodeProdJson' :: Options -> Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Json
-genericEncodeProdJson' opts constrSigns constr args =
+genericEncodeProdJson' opts'@(Options opts) constrSigns constr args =
   if opts.unwrapUnaryRecords && isUnaryRecord constrSigns
   then
-    genericEncodeJson' opts
+    genericUserEncodeJson' opts'
       (Unsafe.head (Unsafe.head constrSigns).sigValues unit)
       (Unsafe.head args unit)
   else
@@ -86,10 +88,10 @@ genericEncodeProdJson' opts constrSigns constr args =
         $ SM.insert sumConf.tagFieldName (encodeJson fixedConstr)
         $ SM.singleton sumConf.contentsFieldName contents
   where
-    sumConf            = case opts. sumEncoding of
+    sumConf            = case opts.sumEncoding of
                           TaggedObject conf -> conf
     fixedConstr        = opts.constructorTagModifier constr
-    encodedArgs        = genericEncodeProdArgs opts constrSigns constr args
+    encodedArgs        = genericEncodeProdArgs opts' constrSigns constr args
     contents           = if opts.flattenContentsArray && length encodedArgs == 1
                          then Unsafe.head encodedArgs
                          else encodeJson encodedArgs
@@ -97,7 +99,7 @@ genericEncodeProdJson' opts constrSigns constr args =
 
 
 genericEncodeProdArgs :: Options -> Array DataConstructor -> String -> Array (Unit -> GenericSpine) -> Array (Json)
-genericEncodeProdArgs opts constrSigns constr args = zipWith (genericEncodeJson' opts) sigValues values
+genericEncodeProdArgs opts constrSigns constr args = zipWith (genericUserEncodeJson' opts) sigValues values
   where
    lSigValues = concatMap (\c -> c.sigValues)
                    <<< filter (\c -> c.sigConstructor == constr) $ constrSigns

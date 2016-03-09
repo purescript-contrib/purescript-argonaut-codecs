@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Argonaut.Core
 import Data.Argonaut.Options
+import Data.Argonaut.Aeson
 import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson')
 import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson')
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=))
