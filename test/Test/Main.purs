@@ -2,19 +2,21 @@ module Test.Main where
 
 import Prelude
 
-import Data.Argonaut.Core
+import Data.Argonaut.Core hiding (toNumber)
 import Data.Argonaut.Options
 import Data.Argonaut.Aeson
 import Data.Argonaut.Decode (decodeJson, DecodeJson, genericDecodeJson, genericDecodeJson')
 import Data.Argonaut.Encode (encodeJson, EncodeJson, genericEncodeJson, genericEncodeJson')
 import Data.Argonaut.Combinators ((:=), (~>), (?>>=))
 import Data.Either
+import Data.Int (toNumber)
 import Data.Tuple
 import Data.Maybe
 import Data.Array
 import Data.Generic
 import Data.Foldable (foldl)
-import Data.List (toList)
+import Data.List (toList, List(..))
+import Data.StrMap as SM
 
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (EXCEPTION())
@@ -22,6 +24,7 @@ import Control.Monad.Eff.Random (RANDOM())
 import Control.Monad.Eff.Console
 import qualified Data.StrMap as M
 
+import Test.Assert (assert', ASSERT)
 import Test.StrongCheck
 import Test.StrongCheck.Gen
 import Test.StrongCheck.Generic
@@ -179,6 +182,22 @@ prop_decoded_spine_valid opts genericValue =
   Right true == (isValidSpine val.signature <$> genericDecodeJson' opts val.signature (genericEncodeJson' opts val.signature val.spine))
   where val = runGenericValue genericValue
 
+checkAesonCompat :: Boolean
+checkAesonCompat =
+  let
+    myTuple = Tuple (Tuple 1 2) "Hello"
+    myJust = Just "Test"
+    myNothing = Nothing :: Maybe Int
+    myLeft = Left "Foo" :: Either String String
+    myRight = Right "Bar" :: Either Int String
+  in
+        gAesonEncodeJson myTuple   == fromArray [fromNumber $ toNumber 1, fromNumber $ toNumber 2, fromString "Hello"]
+    &&  gAesonEncodeJson myJust    == fromString "Test"
+    &&  gAesonEncodeJson myNothing == jsonNull
+    &&  gAesonEncodeJson myLeft    == fromObject (SM.fromList (Tuple "Left" (fromString "Foo") `Cons` Nil))
+    &&  gAesonEncodeJson myRight   == fromObject (SM.fromList (Tuple "Right" (fromString "Bar") `Cons` Nil))
+
+
 genericsCheck :: forall e. Options -> Eff ( err :: EXCEPTION , random :: RANDOM , console :: CONSOLE | e) Unit
 genericsCheck opts= do
   let vNullary = Nullary2
@@ -242,15 +261,17 @@ eitherCheck = do
       Left err ->
         false <?> err
 
-main:: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
+main:: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE, assert :: ASSERT | e ) Unit
 main = do
   eitherCheck
   encodeDecodeCheck
   combinatorsCheck
+  assert' "aesonCompatcheck: " checkAesonCompat
   log "genericsCheck check for argonautOptions"
   genericsCheck argonautOptions
   log "genericsCheck check for aesonOptions"
   genericsCheck aesonOptions
   log "genericsCheck check for unwrapUnaryOptions"
-  let unwrapUnaryOptions = aesonOptions { unwrapUnaryRecords = true }
+  let unwrapOpts = case aesonOptions of Options a -> a
+  let unwrapUnaryOptions = Options $ unwrapOpts { unwrapUnaryRecords = true }
   genericsCheck unwrapUnaryOptions

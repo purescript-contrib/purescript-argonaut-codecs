@@ -64,11 +64,35 @@ gAesonDecodeJson = genericDecodeJson aesonOptions
 
 
 aesonUserEncoding :: Options -> GenericSignature -> GenericSpine -> Maybe Json
-aesonUserEncoding opts sig spine = fromArray <$> encodeTuple opts sig spine
+aesonUserEncoding opts sig spine = encodeMaybe opts sig spine
+                               <|> encodeEither opts sig spine
+                               <|> fromArray <$> encodeTuple opts sig spine
 
 aesonUserDecoding :: Options -> GenericSignature -> Json -> Maybe GenericSpine
 aesonUserDecoding _ _ _ = Nothing
 
+
+encodeMaybe :: Options -> GenericSignature -> GenericSpine -> Maybe Json
+encodeMaybe opts (SigProd "Data.Maybe.Maybe" sigArr) (SProd "Data.Maybe.Just" [elem]) =
+    return $ genericUserEncodeJson' opts valSig val
+  where
+    valSig = getSigFromUnaryConstructor sigArr "Data.Maybe.Just"
+    val = elem unit
+
+encodeMaybe opts (SigProd "Data.Maybe.Maybe" _) (SProd "Data.Maybe.Nothing" _) =
+    return jsonNull
+encodeMaybe _ _ _ = Nothing
+
+encodeEither :: Options -> GenericSignature -> GenericSpine -> Maybe Json
+encodeEither opts (SigProd "Data.Either.Either" sigArr) (SProd eitherConstr [elem]) =
+    return
+      $ fromObject $ SM.fromList
+      $ Tuple strippedConstr (genericUserEncodeJson' opts valSig val) `Cons` Nil
+  where
+    strippedConstr = stripModulePath eitherConstr
+    valSig = getSigFromUnaryConstructor sigArr eitherConstr
+    val = elem unit
+encodeEither _ _ _ = Nothing
 
 encodeTuple :: Options -> GenericSignature ->  GenericSpine -> Maybe JArray
 encodeTuple opts (SigProd "Data.Tuple.Tuple" sigArr) (SProd "Data.Tuple.Tuple" arr) =
@@ -79,10 +103,18 @@ encodeTuple opts (SigProd "Data.Tuple.Tuple" sigArr) (SProd "Data.Tuple.Tuple" a
     encodeTupleArgs opts signatures spines -- Or just encode arguments
   where
     tupleC = Unsafe.head sigArr
-    signatures = ($ unit) <$> tupleC.sigValues
-    spines = ($ unit) <$> arr
+    signatures = map ($ unit) tupleC.sigValues
+    spines = map ($ unit) arr
 encodeTuple _ _ _ = Nothing
 
 
 encodeTupleArgs :: Options -> Array GenericSignature -> Array GenericSpine -> Maybe JArray
 encodeTupleArgs opts sigs arr = return $ zipWith (genericUserEncodeJson' opts) sigs arr
+
+
+getSigFromUnaryConstructor :: Array DataConstructor -> String -> GenericSignature
+getSigFromUnaryConstructor arr name =
+  let
+    constr = Unsafe.head <<< filter ((== name) <<< _.sigConstructor) $ arr
+  in
+    Unsafe.head $ map ($ unit) constr.sigValues

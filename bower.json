@@ -25,10 +25,10 @@
     "purescript-argonaut-core": "^0.2.0",
     "purescript-generics": "^0.7.0",
     "purescript-integers": "^0.2.1",
-    "purescript-partial" : "^1.1.0"
-
+    "purescript-partial": "^1.1.0"
   },
   "devDependencies": {
-    "purescript-strongcheck-generics": "^0.3.0"
+    "purescript-strongcheck-generics": "^0.3.0",
+    "purescript-assert": "~0.1.1"
   }
 }
