@@ -4,8 +4,10 @@ module Data.Argonaut.Decode
   , gDecodeJson
   , genericDecodeJson
   , genericDecodeJson'
+  , genericUserDecodeJson'
   , decodeMaybe
   , module Data.Argonaut.Options
+  , mFail
   ) where
 
 import Prelude
@@ -21,7 +23,7 @@ import Data.Generic (Generic, GenericSpine(..), GenericSignature(..), DataConstr
 import Data.Int (fromNumber)
 import Data.List (List(..), toList)
 import Data.Map as Map
-import Data.Maybe (maybe, Maybe(..))
+import Data.Maybe (maybe, Maybe(..), fromMaybe)
 import Data.String (charAt, toChar)
 import Data.StrMap as M
 import Data.Traversable (traverse, for)
@@ -41,7 +43,14 @@ gDecodeJson = genericDecodeJson argonautOptions
 -- | Decode `Json` representation of a value which has a `Generic` type.
 genericDecodeJson :: forall a. (Generic a) => Options -> Json -> Either String a
 genericDecodeJson opts json = maybe (Left "fromSpine failed") Right <<< fromSpine
-                =<< genericDecodeJson' opts (toSignature (Proxy :: Proxy a)) json
+                =<< genericUserDecodeJson' opts (toSignature (Proxy :: Proxy a)) json
+
+
+-- | Generically encode to json, using a supplied userEncoding, falling back to genericEncodeJson':
+genericUserDecodeJson' :: Options -> GenericSignature -> Json -> Either String GenericSpine
+genericUserDecodeJson' opts'@(Options opts) sign json = fromMaybe (genericDecodeJson' opts' sign json)
+                                                        (opts.userDecoding opts' sign json)
+
 
 -- | Decode `Json` representation of a `GenericSpine`.
 genericDecodeJson' :: Options -> GenericSignature -> Json -> Either String GenericSpine
@@ -53,12 +62,12 @@ genericDecodeJson' opts signature json = case signature of
  SigBoolean -> SBoolean <$> mFail "Expected a boolean" (toBoolean json)
  SigArray thunk -> do
    jArr <- mFail "Expected an array" $ toArray json
-   SArray <$> traverse (map const <<< genericDecodeJson' opts (thunk unit)) jArr
+   SArray <$> traverse (map const <<< genericUserDecodeJson' opts (thunk unit)) jArr
  SigRecord props -> do
    jObj <- mFail "Expected an object" $ toObject json
    SRecord <$> for props \({recLabel: lbl, recValue: val}) -> do
      pf <- mFail ("'" <> lbl <> "' property missing") (M.lookup lbl jObj)
-     sp <- genericDecodeJson' opts (val unit) pf
+     sp <- genericUserDecodeJson' opts (val unit) pf
      pure { recLabel: lbl, recValue: const sp }
  SigProd typeConstr constrSigns -> genericDecodeProdJson' opts typeConstr constrSigns json
 
@@ -68,7 +77,7 @@ genericDecodeProdJson' opts'@(Options opts) tname constrSigns json =
   then do
     let constr = Unsafe.head constrSigns
     let unwrapped = Unsafe.head constr.sigValues unit
-    r <- genericDecodeJson' opts' unwrapped json
+    r <- genericUserDecodeJson' opts' unwrapped json
     pure (SProd constr.sigConstructor [const r])
   else
     if opts.allNullaryToStringTag && allConstructorsNullary constrSigns
@@ -88,14 +97,14 @@ genericDecodeProdJson' opts'@(Options opts) tname constrSigns json =
       vals <- if opts.flattenContentsArray && (length foundConstr.sigValues == 1)
               then pure [jVals]
               else mFail (decodingErr "Expected array") (toArray jVals)
-      sps  <- zipWithA (\k -> genericDecodeJson' opts' (k unit)) foundConstr.sigValues vals
+      sps  <- zipWithA (\k -> genericUserDecodeJson' opts' (k unit)) foundConstr.sigValues vals
       pure (SProd foundConstr.sigConstructor (const <$> sps))
 
     decodingErr msg = "When decoding a " ++ tname ++ ": " ++ msg
     fixConstr      = opts.constructorTagModifier
     sumConf = case opts.sumEncoding of
       TaggedObject conf -> conf
-      _ -> unsafeCrashWith "Only TaggedObject encoding is supported - FIX ME!" -- Not yet supported, waiting for purescript 0.8
+      _ -> unsafeCrashWith "Only TaggedObject encoding is supported - FIX ME!"
     tagL = sumConf.tagFieldName
     contL = sumConf.contentsFieldName
     findConstrFail tag = mFail (decodingErr ("'" <> tag <> "' isn't a valid constructor")) (findConstr tag)

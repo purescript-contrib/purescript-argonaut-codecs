@@ -7,6 +7,7 @@ import Data.String (lastIndexOf, drop)
 import Data.Generic (DataConstructor())
 import Data.Array (null, length)
 import Data.Generic (Generic, GenericSpine(..), toSpine, GenericSignature(..), DataConstructor(), toSignature)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 
 
@@ -27,7 +28,7 @@ newtype Options = Options { -- newtype necessary to avoid: https://github.com/pu
 , userEncoding :: Options -> GenericSignature -> GenericSpine -> Maybe Json
 -- | You can choose to decode some data types differently than the generic default.
 -- | Just return Nothing, to relay to generic decoding.
-, userDecoding :: Options -> GenericSignature -> Json -> Maybe GenericSpine
+, userDecoding :: Options -> GenericSignature -> Json -> Maybe (Either String GenericSpine)
 }
 
 data SumEncoding =
@@ -62,7 +63,7 @@ argonautSumEncoding = TaggedObject {
 dummyUserEncoding :: Options -> GenericSignature -> GenericSpine -> Maybe Json
 dummyUserEncoding _ _ _ = Nothing
 
-dummyUserDecoding :: Options -> GenericSignature -> Json -> Maybe GenericSpine
+dummyUserDecoding :: Options -> GenericSignature -> Json -> Maybe (Either String GenericSpine)
 dummyUserDecoding _ _ _ = Nothing
 
 allConstructorsNullary :: Array DataConstructor -> Boolean

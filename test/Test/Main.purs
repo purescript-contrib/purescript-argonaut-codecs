@@ -198,17 +198,28 @@ checkAesonCompat =
     &&  gAesonEncodeJson myRight   == fromObject (SM.fromList (Tuple "Right" (fromString "Bar") `Cons` Nil))
 
 
-genericsCheck :: forall e. Options -> Eff ( err :: EXCEPTION , random :: RANDOM , console :: CONSOLE | e) Unit
+genericsCheck :: forall e. Options -> Eff ( err :: EXCEPTION , random :: RANDOM , console :: CONSOLE, assert :: ASSERT | e) Unit
 genericsCheck opts= do
   let vNullary = Nullary2
   let mArgs = MArgs 9 20 "Hello"
   let ntw1 = NewTypeWrapper1 { test : "hello" }
   let ntw2 = NewTypeWrapper2 { test : 9 }
-  log "Check that decodeJson' and encodeJson' form an isomorphism"
-  logError " Check all nullary:" (valEncodeDecode opts vNullary)
-  logError " Check multiple args:" (valEncodeDecode opts mArgs)
-  logError " Check new type wrapper (1) encoding:" (valEncodeDecode opts ntw1)
-  logError " Check new type wrapper (2) encoding:" (valEncodeDecode opts ntw2)
+  let mJust = Just "Test"
+  let mNothing = Nothing :: Maybe Int
+  let mRight = Right 9 :: Either String Int
+  let mLeft = Right (Left 2) :: Either String (Either Int Int)
+  let mTuple = Tuple (Tuple (Tuple 2 3) "haha") "test"
+  log "Check that decodeJson' and encodeJson' form an isomorphism .."
+  assert' " Check all nullary:" (valEncodeDecode opts vNullary)
+  assert' " Check multiple args:" (valEncodeDecode opts mArgs)
+  assert' " Check new type wrapper (1) encoding:" (valEncodeDecode opts ntw1)
+  assert' " Check new type wrapper (2) encoding:" (valEncodeDecode opts ntw2)
+  assert' " Check Just" (valEncodeDecode opts mJust)
+  assert' " Check Nothing" (valEncodeDecode opts mNothing)
+  assert' " Check Right" (valEncodeDecode opts mRight)
+  assert' " Check Left" (valEncodeDecode opts mLeft)
+  assert' " Check tuple" (valEncodeDecode opts mTuple)
+
   quickCheck (prop_iso_generic opts)
   log "Check that decodeJson' returns a valid spine"
   quickCheck (prop_decoded_spine_valid opts)
@@ -245,10 +256,6 @@ genericsCheck opts= do
   where
     valEncodeDecode :: forall a. (Eq a, Generic a) => Options ->  a -> Boolean
     valEncodeDecode opts val = ((Right val) ==) <<< genericDecodeJson opts <<< genericEncodeJson opts $ val
-
-    logError message test = log $ message ++ result test
-      where result false = " ##########FAILED########!"
-            result true  = " ok."
 
 eitherCheck :: forall e. Eff ( err :: EXCEPTION, random :: RANDOM, console :: CONSOLE | e ) Unit
 eitherCheck = do
