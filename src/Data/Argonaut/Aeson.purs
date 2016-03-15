@@ -42,7 +42,7 @@ aesonOptions = Options {
 , allNullaryToStringTag  : true
 , sumEncoding            : aesonSumEncoding
 , flattenContentsArray   : true
-, unwrapUnaryRecords     : false
+, unwrapUnaryRecords     : true
 , userEncoding           : aesonUserEncoding
 , userDecoding           : aesonUserDecoding
 }
