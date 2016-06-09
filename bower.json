@@ -22,11 +22,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "purescript-argonaut-core": "^0.2.0",
-    "purescript-generics": "^0.7.0",
-    "purescript-integers": "^0.2.1"
+    "purescript-argonaut-core": "^1.0.0",
+    "purescript-generics": "^1.0.0",
+    "purescript-integers": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-strongcheck-generics": "^0.3.0"
+    "purescript-strongcheck": "^1.1.1",
+    "purescript-strongcheck-generics": "garyb/purescript-strongcheck-generics#0.9.1-updates"
   }
 }
