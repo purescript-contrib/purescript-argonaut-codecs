@@ -143,6 +143,7 @@ data User
   | Guest String
   | Registered
       { name :: String
+      , bio :: Maybe String
       , age :: Int
       , balance :: Number
       , banned :: Boolean
@@ -169,6 +170,7 @@ genericsCheck = do
   logShow $ gEncodeJson $ Guest "guest's handle"
   logShow $ gEncodeJson $ Registered
     { name: "user1"
+    , bio: Just "Ordinary User"
     , age: 5
     , balance: 26.6
     , banned: false
@@ -178,6 +180,7 @@ genericsCheck = do
         , Guest "someGuest"
         , Registered
             { name: "user2"
+            , bio: Nothing
             , age: 6
             , balance: 32.1
             , banned: false
