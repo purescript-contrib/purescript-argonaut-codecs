@@ -7,12 +7,10 @@ module Data.Argonaut.Decode.Class
 
 import Prelude
 
-import Control.Alt ((<|>))
-import Control.Bind ((=<<))
-import Data.Bifunctor (lmap)
 import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
 import Data.Array (zipWithA)
-import Data.Either (either, Either(..))
+import Data.Bifunctor (lmap)
+import Data.Either (Either(..))
 import Data.Foldable (find)
 import Data.Generic (class Generic, GenericSpine(..), GenericSignature(..), fromSpine, toSignature)
 import Data.Int (fromNumber)
@@ -23,6 +21,7 @@ import Data.String (charAt, toChar)
 import Data.StrMap as SM
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
+
 import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
@@ -132,13 +131,10 @@ instance decodeList :: DecodeJson a => DecodeJson (List a) where
     <<< (traverse decodeJson <=< map (map fromFoldable) decodeJArray)
 
 instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a b) where
-  decodeJson = map M.fromList <<< decodeJson
+  decodeJson = map (M.fromFoldable :: List (Tuple a b) -> M.Map a b) <<< decodeJson
 
 decodeJArray :: Json -> Either String JArray
 decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 
 decodeJOject :: Json -> Either String JObject
 decodeJOject = maybe (Left "Value is not an Object") Right <<< toObject
-
-decodeMaybe :: forall a. DecodeJson a => Json -> Maybe a
-decodeMaybe = either (const Nothing) pure <<< decodeJson
