@@ -81,7 +81,7 @@ instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a 
 instance decodeJsonEither :: (DecodeJson a, DecodeJson b) => DecodeJson (Either a b) where
   decodeJson json =
     lmap ("Couldn't decode Either: " <> _) $
-      decodeJOject json >>= \obj -> do
+      decodeJObject json >>= \obj -> do
         tag <- maybe (Left "Expected field 'tag'") Right $ SM.lookup "tag" obj
         val <- maybe (Left "Expected field 'value'") Right $ SM.lookup "value" obj
         case toString tag of
@@ -118,7 +118,7 @@ instance decodeJsonChar :: DecodeJson Char where
 instance decodeStrMap :: DecodeJson a => DecodeJson (SM.StrMap a) where
   decodeJson
     = lmap ("Couldn't decode StrMap: " <> _)
-    <<< (traverse decodeJson <=< decodeJOject)
+    <<< (traverse decodeJson <=< decodeJObject)
 
 instance decodeArray :: DecodeJson a => DecodeJson (Array a) where
   decodeJson
@@ -136,5 +136,5 @@ instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a
 decodeJArray :: Json -> Either String JArray
 decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 
-decodeJOject :: Json -> Either String JObject
-decodeJOject = maybe (Left "Value is not an Object") Right <<< toObject
+decodeJObject :: Json -> Either String JObject
+decodeJObject = maybe (Left "Value is not an Object") Right <<< toObject
