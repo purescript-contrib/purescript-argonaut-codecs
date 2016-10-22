@@ -53,7 +53,7 @@ instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either 
     where
     obj :: forall c. EncodeJson c => String -> c -> Json
     obj tag x =
-      fromObject $ SM.fromList $
+      fromObject $ SM.fromFoldable $
         Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
 
 instance encodeJsonUnit :: EncodeJson Unit where

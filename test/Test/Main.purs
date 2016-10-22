@@ -5,13 +5,13 @@ import Prelude
 import Control.Monad.Eff.Console (log, logShow)
 
 import Data.Argonaut.Core (JObject, Json, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
-import Data.Argonaut.Decode (decodeJson, gDecodeJson')
-import Data.Argonaut.Encode (encodeJson, gEncodeJson, gEncodeJson', (~>), (:=))
+import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Encode (encodeJson, gEncodeJson, (:=), (~>))
 import Data.Array (zipWith, nubBy, length)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (on)
-import Data.Generic (class Generic, isValidSpine)
+import Data.Generic (class Generic)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.StrMap as SM
@@ -21,7 +21,6 @@ import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
 import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
 import Test.StrongCheck.Gen (Gen, Size, showSample, sized, frequency, oneOf, vectorOf)
-import Test.StrongCheck.Generic (GenericValue, runGenericValue)
 
 main :: SC () Unit
 main = do
@@ -155,10 +154,6 @@ derive instance genericUser :: Generic User
 
 genericsCheck :: SC () Unit
 genericsCheck = do
-  log "Check that gDecodeJson' and gEncodeJson' form an isomorphism"
-  quickCheck prop_iso_generic
-  log "Check that gDecodeJson' returns a valid spine"
-  quickCheck prop_decoded_spine_valid
   log "Print samples of values encoded with gEncodeJson"
   logShow $ gEncodeJson 5
   logShow $ gEncodeJson [1, 2, 3, 5]
@@ -189,17 +184,6 @@ genericsCheck = do
             }
         ]
     }
-  where
-
-  prop_iso_generic :: GenericValue -> Boolean
-  prop_iso_generic genericValue =
-    Right val.spine == gDecodeJson' val.signature (gEncodeJson' val.spine)
-    where val = runGenericValue genericValue
-
-  prop_decoded_spine_valid :: GenericValue -> Boolean
-  prop_decoded_spine_valid genericValue =
-    Right true == (isValidSpine val.signature <$> gDecodeJson' val.signature (gEncodeJson' val.spine))
-    where val = runGenericValue genericValue
 
 eitherCheck :: SC () Unit
 eitherCheck = do
