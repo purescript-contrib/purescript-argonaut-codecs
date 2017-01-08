@@ -68,9 +68,18 @@ gDecodeJson' signature json = case signature of
   mFail msg = maybe (Left msg) Right
 
 instance decodeJsonMaybe :: DecodeJson a => DecodeJson (Maybe a) where
-  decodeJson j
-    | isNull j = pure Nothing
-    | otherwise = Just <$> decodeJson j
+  decodeJson j =
+      case decode j of
+        Right x -> Right x
+        Left x -> backwardsCompat
+    where
+    decode =
+      decodeJObject >=> lookupJust >=> decodeJson
+    lookupJust =
+        maybe (Left "Missing property 'just'") Right <<< SM.lookup "just"
+    backwardsCompat
+      | isNull j = pure Nothing
+      | otherwise = Just <$> decodeJson j
 
 instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a b) where
   decodeJson j = decodeJson j >>= f

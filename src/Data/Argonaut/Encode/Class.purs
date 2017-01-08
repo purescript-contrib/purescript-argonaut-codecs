@@ -2,7 +2,7 @@ module Data.Argonaut.Encode.Class where
 
 import Prelude
 
-import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
+import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject, jsonEmptyObject, jsonSingletonObject)
 import Data.Either (Either(), either)
 import Data.Foldable (foldr)
 import Data.Generic (class Generic, GenericSpine(..), toSpine)
@@ -42,8 +42,8 @@ gEncodeJson' = case _ of
       SM.insert field.recLabel (gEncodeJson' $ field.recValue unit)
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
-  encodeJson Nothing  = jsonNull
-  encodeJson (Just a) = encodeJson a
+  encodeJson Nothing  = jsonEmptyObject
+  encodeJson (Just a) = jsonSingletonObject "just" (encodeJson a)
 
 instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a b) where
   encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
