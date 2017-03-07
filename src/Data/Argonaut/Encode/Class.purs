@@ -88,3 +88,6 @@ instance encodeStrMap :: EncodeJson a => EncodeJson (SM.StrMap a) where
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
   encodeJson = encodeJson <<< M.toList
+
+instance encodeVoid :: EncodeJson Void where
+  encodeJson = absurd

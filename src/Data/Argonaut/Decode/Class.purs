@@ -133,6 +133,9 @@ instance decodeList :: DecodeJson a => DecodeJson (List a) where
 instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a b) where
   decodeJson = map (M.fromFoldable :: List (Tuple a b) -> M.Map a b) <<< decodeJson
 
+instance decodeVoid :: DecodeJson Void where
+  decodeJson _ = Left "Value cannot be Void"
+
 decodeJArray :: Json -> Either String JArray
 decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 
