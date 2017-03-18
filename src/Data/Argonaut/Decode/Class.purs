@@ -6,6 +6,7 @@ module Data.Argonaut.Decode.Class
   ) where
 
 import Prelude
+
 import Data.Array as Arr
 import Control.Alternative (class Plus)
 import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
@@ -24,6 +25,7 @@ import Data.String (charAt, toChar)
 import Data.StrMap as SM
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
+
 import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
