@@ -8,6 +8,8 @@ import Data.Foldable (foldr)
 import Data.Generic (class Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
+import Data.List as L
+
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))
@@ -79,7 +81,7 @@ instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmpty Array
   encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h t
 
 instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
-  encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h (toUnfoldable t)
+  encodeJson (NonEmpty h t) = encodeJson $ L.insertAt 0 h t
 
 instance encodeJsonChar :: EncodeJson Char where
   encodeJson = encodeJson <<< singleton
