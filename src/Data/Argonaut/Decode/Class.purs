@@ -7,8 +7,6 @@ module Data.Argonaut.Decode.Class
 
 import Prelude
 import Data.Array as Arr
-import Data.Map as M
-import Data.StrMap as SM
 import Control.Alternative (class Plus)
 import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
 import Data.Array (zipWithA)
@@ -18,10 +16,12 @@ import Data.Foldable (find)
 import Data.Generic (class Generic, GenericSpine(..), GenericSignature(..), fromSpine, toSignature)
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
+import Data.Map as M
 import Data.List as L
 import Data.Maybe (maybe, Maybe(..))
 import Data.NonEmpty (NonEmpty, singleton, (:|))
 import Data.String (charAt, toChar)
+import Data.StrMap as SM
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
 import Type.Proxy (Proxy(..))

@@ -1,6 +1,7 @@
 module Data.Argonaut.Encode.Class where
 
 import Prelude
+
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
 import Data.Either (Either(), either)
 import Data.Array as Arr
@@ -9,7 +10,6 @@ import Data.Generic (class Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.List as L
-
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))

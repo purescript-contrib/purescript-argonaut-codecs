@@ -1,8 +1,7 @@
 module Test.Main where
 
 import Prelude
-import Data.List as L
-import Data.StrMap as SM
+
 import Control.Monad.Eff.Console (log, logShow)
 import Data.Argonaut.Core (JObject, Json, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
 import Data.Argonaut.Decode (class DecodeJson, decodeJson)
@@ -13,9 +12,12 @@ import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.Generic (class Generic)
 import Data.List (List, fromFoldable, singleton)
+import Data.List as L
 import Data.Maybe (Maybe(..), maybe, isJust)
+import Data.StrMap as SM
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..), fst, snd)
+
 import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>), Result)
 import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
