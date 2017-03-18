@@ -117,14 +117,14 @@ instance decodeJsonJson :: DecodeJson Json where
 
 toNonEmpty :: forall a f. (Plus f) => ({ head :: f a -> Maybe a, tail :: f a -> Maybe (f a) }) -> (f a) -> Either String (NonEmpty f a)
 toNonEmpty i a = case (Tuple (i.head a) (i.tail a)) of
-  (Tuple Nothing _) -> Left "is empty."
+  (Tuple Nothing _) -> Left " is empty."
   (Tuple (Just h) Nothing) -> Right $ singleton h
   (Tuple (Just h) (Just t)) -> Right $ h :| t
 
 instance decodeJsonNonEmptyArray :: (DecodeJson a) => DecodeJson (NonEmpty Array a) where
   decodeJson
-    = lmap ("Couldn't decode Array: " <> _)
-    <<< (traverse decodeJson <=< (toNonEmpty { head : Arr.head, tail : Arr.tail } ) <=< decodeJArray)
+    = lmap ("Couldn't decode NonEmpty Array: " <> _)
+    <<< (traverse decodeJson <=< (lmap ("Array" <> _) <<< toNonEmpty { head : Arr.head, tail : Arr.tail } ) <=< decodeJArray)
 
 instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmpty List a) where
   decodeJson
