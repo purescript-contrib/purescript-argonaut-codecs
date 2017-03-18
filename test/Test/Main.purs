@@ -1,28 +1,29 @@
 module Test.Main where
 
 import Prelude
+import Data.List as L
 import Data.StrMap as SM
 import Control.Monad.Eff.Console (log, logShow)
 import Data.Argonaut.Core (JObject, Json, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
-import Data.Argonaut.Decode (decodeJson)
-import Data.Argonaut.Encode (encodeJson, gEncodeJson, (:=), (~>))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson)
+import Data.Argonaut.Encode (class EncodeJson, encodeJson, gEncodeJson, (:=), (~>))
 import Data.Array (zipWith, nubBy, length)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.Generic (class Generic)
 import Data.List (List, fromFoldable, singleton)
-import Data.List as L
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.NonEmpty (NonEmpty(..), (:|))
-import Data.Tuple (Tuple(..), fst)
-import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
+import Data.Tuple (Tuple(..), fst, snd)
+import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>), Result)
 import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
 import Test.StrongCheck.Gen (Gen, Size, showSample, sized, frequency, oneOf, vectorOf)
 
 main :: SC () Unit
 main = do
+  nonEmptyCheck
   eitherCheck
   encodeDecodeCheck
   combinatorsCheck
@@ -194,9 +195,23 @@ eitherCheck :: SC () Unit
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->
-    case decodeJson (encodeJson x) of
-      Right decoded ->
-        decoded == x
-          <?> ("x = " <> show x <> ", decoded = " <> show decoded)
-      Left err ->
-        false <?> err
+    encodeThenDecodeEqual x
+
+encodeThenDecodeEqual :: forall a. (Eq a, Show a, EncodeJson a, DecodeJson a) => a -> Result
+encodeThenDecodeEqual v = do
+  case decodeJson (encodeJson v) of
+    Right decoded ->
+      decoded == v
+        <?> ("v = " <> show v <> ", decoded = " <> show decoded)
+    Left err ->
+      false <?> err
+
+nonEmptyCheck :: SC () Unit
+nonEmptyCheck = do
+  log "Test EncodeJson/DecodeJson NonEmpty Array and NonEmpty List"
+  quickCheck \(x :: Tuple String (Array String)) -> do
+    let ne = fst x :| snd x
+    encodeThenDecodeEqual ne
+  quickCheck \(x :: Tuple String (List String)) -> do
+    let ne = fst x :| snd x
+    encodeThenDecodeEqual ne
