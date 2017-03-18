@@ -6,7 +6,10 @@ module Data.Argonaut.Decode.Class
   ) where
 
 import Prelude
-
+import Data.Array as Arr
+import Data.Map as M
+import Data.StrMap as SM
+import Control.Alternative (class Plus)
 import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
 import Data.Array (zipWithA)
 import Data.Bifunctor (lmap)
@@ -15,13 +18,12 @@ import Data.Foldable (find)
 import Data.Generic (class Generic, GenericSpine(..), GenericSignature(..), fromSpine, toSignature)
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
-import Data.Map as M
+import Data.List as L
 import Data.Maybe (maybe, Maybe(..))
+import Data.NonEmpty (NonEmpty, singleton, (:|))
 import Data.String (charAt, toChar)
-import Data.StrMap as SM
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
-
 import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
@@ -109,6 +111,23 @@ instance decodeJsonString :: DecodeJson String where
 
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
+
+
+toNonEmpty :: forall a f. (Plus f) => ({ head :: f a -> Maybe a, tail :: f a -> Maybe (f a) }) -> (f a) -> Either String (NonEmpty f a)
+toNonEmpty i a = case (Tuple (i.head a) (i.tail a)) of
+  (Tuple Nothing _) -> Left "is empty."
+  (Tuple (Just h) Nothing) -> Right $ singleton h
+  (Tuple (Just h) (Just t)) -> Right $ h :| t
+
+instance decodeJsonNonEmptyArray :: (DecodeJson a) => DecodeJson (NonEmpty Array a) where
+  decodeJson
+    = lmap ("Couldn't decode Array: " <> _)
+    <<< (traverse decodeJson <=< (toNonEmpty { head : Arr.head, tail : Arr.tail } ) <=< decodeJArray)
+
+instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmpty List a) where
+  decodeJson
+    = lmap ("Couldn't decode NonEmpty List: " <> _)
+    <<< (traverse decodeJson <=< (lmap ("List" <> _) <<< toNonEmpty { head : L.head, tail : L.tail }) <=< map (map fromFoldable) decodeJArray)
 
 instance decodeJsonChar :: DecodeJson Char where
   decodeJson j =

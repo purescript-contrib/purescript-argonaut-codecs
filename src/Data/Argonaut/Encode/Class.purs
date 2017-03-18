@@ -1,15 +1,16 @@
 module Data.Argonaut.Encode.Class where
 
 import Prelude
-
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject)
 import Data.Either (Either(), either)
+import Data.Array as Arr
 import Data.Foldable (foldr)
 import Data.Generic (class Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
+import Data.NonEmpty (NonEmpty(..))
 import Data.String (singleton)
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
@@ -73,6 +74,12 @@ instance encodeJsonJString :: EncodeJson String where
 
 instance encodeJsonJson :: EncodeJson Json where
   encodeJson = id
+
+instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
+  encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h t
+
+instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
+  encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h (toUnfoldable t)
 
 instance encodeJsonChar :: EncodeJson Char where
   encodeJson = encodeJson <<< singleton

@@ -1,9 +1,8 @@
 module Test.Main where
 
 import Prelude
-
+import Data.StrMap as SM
 import Control.Monad.Eff.Console (log, logShow)
-
 import Data.Argonaut.Core (JObject, Json, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (encodeJson, gEncodeJson, (:=), (~>))
@@ -12,11 +11,11 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.Generic (class Generic)
-import Data.List (fromFoldable)
+import Data.List (List, fromFoldable, singleton)
+import Data.List as L
 import Data.Maybe (Maybe(..), maybe, isJust)
-import Data.StrMap as SM
+import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..), fst)
-
 import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
 import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
@@ -144,6 +143,8 @@ data User
       { name :: String
       , bio :: Maybe String
       , age :: Int
+      , hobbies :: NonEmpty Array String
+      , accesslog :: NonEmpty List String
       , balance :: Number
       , banned :: Boolean
       , tweets :: Array String
@@ -170,6 +171,8 @@ genericsCheck = do
     , balance: 26.6
     , banned: false
     , tweets: ["Hello", "What's up"]
+    , hobbies: "Jump Rope" :| ["Sightseeing"]
+    , accesslog: "223.67.92.1" :| L.singleton "210.5.2.25"
     , followers:
         [ Anonymous
         , Guest "someGuest"
@@ -177,6 +180,8 @@ genericsCheck = do
             { name: "user2"
             , bio: Nothing
             , age: 6
+            , hobbies: "Jump Rope" :| ["Cooking"]
+            , accesslog: "152.67.25.1" :| L.singleton "210.5.2.25"
             , balance: 32.1
             , banned: false
             , tweets: ["Hi"]
