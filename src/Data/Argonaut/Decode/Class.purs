@@ -5,21 +5,17 @@ module Data.Argonaut.Decode.Class
 
 import Prelude
 
-import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toNumber, toObject, toString, toBoolean)
-import Data.Array (zipWithA)
+import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toObject, toString)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Foldable (find)
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
-import Data.String (charAt, toChar)
+import Data.String (charAt)
 import Data.StrMap as SM
-import Data.Traversable (traverse, for)
+import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-
-import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
