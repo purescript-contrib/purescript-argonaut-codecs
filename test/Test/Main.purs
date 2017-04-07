@@ -2,25 +2,21 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff.Console (log, logShow)
+import Control.Monad.Eff.Console (log)
 
-import Data.Argonaut.Core (JObject, Json, isObject, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
+import Data.Argonaut.Core (JObject, Json, isObject, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (encodeJson, (:=), (~>))
 import Data.Argonaut.Gen (genJson)
-import Data.Array (zipWith, nubBy, length)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.Function (on)
-import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.StrMap as SM
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..))
 
 import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
-import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
-import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
-import Test.StrongCheck.Gen (Gen, Size, showSample, sized, frequency, oneOf, vectorOf, suchThat, resize)
+import Test.StrongCheck.Arbitrary (class Arbitrary)
+import Test.StrongCheck.Gen (suchThat, resize)
 
 main :: SC () Unit
 main = do
@@ -80,7 +76,7 @@ combinatorsCheck = do
   prop_assoc_append (Tuple (Tuple key (TestJson val)) (Obj obj)) =
     let appended = (key := val) ~> obj
     in case toObject appended >>= SM.lookup key of
-      Just val -> true
+      Just value -> true
       _ -> false
 
   prop_get_jobject_field :: Obj -> Boolean
@@ -88,9 +84,9 @@ combinatorsCheck = do
     maybe false go $ toObject obj
     where
     go :: JObject -> Boolean
-    go obj =
-      let keys = SM.keys obj
-      in foldl (\ok key -> ok && isJust (SM.lookup key obj)) true keys
+    go object =
+      let keys = SM.keys object
+      in foldl (\ok key -> ok && isJust (SM.lookup key object)) true keys
 
 eitherCheck :: SC () Unit
 eitherCheck = do

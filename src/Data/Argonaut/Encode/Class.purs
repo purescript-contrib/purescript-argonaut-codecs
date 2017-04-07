@@ -4,7 +4,6 @@ import Prelude
 
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject, jsonEmptyObject, jsonSingletonObject)
 import Data.Either (Either(), either)
-import Data.Foldable (foldr)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
