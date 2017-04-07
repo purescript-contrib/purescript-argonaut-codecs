@@ -5,7 +5,6 @@ import Prelude
 import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject, jsonEmptyObject, jsonSingletonObject)
 import Data.Either (Either(), either)
 import Data.Foldable (foldr)
-import Data.Generic (class Generic, GenericSpine(..), toSpine)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
@@ -16,30 +15,6 @@ import Data.Tuple (Tuple(..))
 
 class EncodeJson a where
   encodeJson :: a -> Json
-
--- | Encode any `Generic` data structure into `Json`.
-gEncodeJson :: forall a. Generic a => a -> Json
-gEncodeJson = gEncodeJson' <<< toSpine
-
--- | Encode `GenericSpine` into `Json`.
-gEncodeJson' :: GenericSpine -> Json
-gEncodeJson' = case _ of
-  SInt x -> fromNumber $ toNumber x
-  SString x -> fromString x
-  SChar x -> fromString $ singleton x
-  SNumber x -> fromNumber x
-  SBoolean x -> fromBoolean x
-  SArray thunks -> fromArray (gEncodeJson' <<< (unit # _) <$> thunks)
-  SUnit -> jsonNull
-  SProd constr args ->
-    fromObject
-      $ SM.insert "tag" (encodeJson constr)
-      $ SM.singleton "values" (encodeJson (gEncodeJson' <<< (unit # _) <$> args))
-  SRecord fields ->
-    fromObject $ foldr addField SM.empty fields
-    where
-    addField field =
-      SM.insert field.recLabel (gEncodeJson' $ field.recValue unit)
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
   encodeJson Nothing  = jsonEmptyObject
@@ -87,7 +62,7 @@ instance encodeStrMap :: EncodeJson a => EncodeJson (SM.StrMap a) where
   encodeJson = fromObject <<< map encodeJson
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
-  encodeJson = encodeJson <<< M.toList
+  encodeJson = encodeJson <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))
 
 instance encodeVoid :: EncodeJson Void where
   encodeJson = absurd
