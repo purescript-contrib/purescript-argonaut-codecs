@@ -22,11 +22,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "purescript-argonaut-core": "^2.0.0",
-    "purescript-generics": "^3.0.0",
-    "purescript-integers": "^2.0.0"
+    "purescript-argonaut-core": "^3.0.0",
+    "purescript-generics": "^4.0.0",
+    "purescript-integers": "^3.0.0"
   },
   "devDependencies": {
-    "purescript-strongcheck": "^2.0.0"
+    "purescript-strongcheck": "^3.1.0"
   }
 }

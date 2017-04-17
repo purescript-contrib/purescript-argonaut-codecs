@@ -2,87 +2,40 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff.Console (log, logShow)
-import Data.Argonaut.Core (JObject, Json, toObject, fromObject, fromArray, fromString, fromNumber, fromBoolean, jsonNull)
-import Data.Argonaut.Decode (class DecodeJson, decodeJson)
-import Data.Argonaut.Encode (class EncodeJson, encodeJson, gEncodeJson, (:=), (~>))
-import Data.Array (zipWith, nubBy, length)
+import Control.Monad.Eff.Console (log)
+
+import Data.Argonaut.Core (JObject, Json, isObject, toObject)
+import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Encode (encodeJson, (:=), (~>))
+import Data.Argonaut.Gen (genJson)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.Function (on)
-import Data.Generic (class Generic)
-import Data.List (List, fromFoldable, singleton)
-import Data.List as L
 import Data.Maybe (Maybe(..), maybe, isJust)
 import Data.StrMap as SM
-import Data.NonEmpty (NonEmpty(..), (:|))
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple (Tuple(..))
 
-import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>), Result)
-import Test.StrongCheck.Arbitrary (class Arbitrary, arbitrary)
-import Test.StrongCheck.Data.AlphaNumString (AlphaNumString(..))
-import Test.StrongCheck.Gen (Gen, Size, showSample, sized, frequency, oneOf, vectorOf)
+import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
+import Test.StrongCheck.Arbitrary (class Arbitrary)
+import Test.StrongCheck.Gen (suchThat, resize)
 
 main :: SC () Unit
 main = do
-  nonEmptyCheck
   eitherCheck
   encodeDecodeCheck
   combinatorsCheck
-  genericsCheck
-
-genJNull :: Gen Json
-genJNull = pure jsonNull
-
-genJBool :: Gen Json
-genJBool = fromBoolean <$> arbitrary
-
-genJNumber :: Gen Json
-genJNumber = fromNumber <$> arbitrary
-
-genJString :: Gen Json
-genJString = fromString <$> arbitrary
-
-genJArray :: Size -> Gen Json
-genJArray sz = fromArray <$> vectorOf sz (genJson $ sz - 1)
-
-genJObject :: Size -> Gen Json
-genJObject sz = do
-  v <- vectorOf sz (genJson $ sz - 1)
-  k <- vectorOf (length v) (arbitrary :: Gen AlphaNumString)
-  pure
-    let
-      f (AlphaNumString s) = s <> "x"
-      k' = f <$> k
-    in
-      fromObject <<< SM.fromFoldable <<< nubBy (eq `on` fst) $ zipWith Tuple k' v
-
-genJson :: Size -> Gen Json
-genJson 0 = oneOf genJNull [genJBool, genJNumber, genJString]
-genJson n = frequency (Tuple 1.0 genJNull) rest where
-  rest = fromFoldable
-    [ Tuple 2.0 genJBool
-    , Tuple 2.0 genJNumber
-    , Tuple 3.0 genJString
-    , Tuple 1.0 (genJArray n)
-    , Tuple 1.0 (genJObject n)
-    ]
 
 newtype TestJson = TestJson Json
 
 instance arbitraryTestJson :: Arbitrary TestJson where
-  arbitrary = TestJson <$> sized genJson
+  arbitrary = TestJson <$> (resize 5 genJson)
 
 encodeDecodeCheck :: SC () Unit
 encodeDecodeCheck = do
-  log "Showing small sample of JSON"
-  showSample (genJson 10)
-
   log "Testing that any JSON can be encoded and then decoded"
   quickCheck' 20 prop_encode_then_decode
 
   log "Testing that any JSON can be decoded and then encoded"
-  quickCheck' 20 prop_decode_then_encode
+  quickCheck' 20 (prop_decode_then_encode)
 
   where
 
@@ -100,7 +53,7 @@ unObj :: Obj -> Json
 unObj (Obj j) = j
 
 instance arbitraryObj :: Arbitrary Obj where
-  arbitrary = Obj <$> genJObject 5
+  arbitrary = Obj <$> suchThat (resize 5 genJson) isObject
 
 combinatorsCheck :: SC () Unit
 combinatorsCheck = do
@@ -123,7 +76,7 @@ combinatorsCheck = do
   prop_assoc_append (Tuple (Tuple key (TestJson val)) (Obj obj)) =
     let appended = (key := val) ~> obj
     in case toObject appended >>= SM.lookup key of
-      Just val -> true
+      Just value -> true
       _ -> false
 
   prop_get_jobject_field :: Obj -> Boolean
@@ -131,89 +84,17 @@ combinatorsCheck = do
     maybe false go $ toObject obj
     where
     go :: JObject -> Boolean
-    go obj =
-      let keys = SM.keys obj
-      in foldl (\ok key -> ok && isJust (SM.lookup key obj)) true keys
-
-newtype MyRecord = MyRecord { foo :: String, bar :: Int }
-
-derive instance genericMyRecord :: Generic MyRecord
-
-data User
-  = Anonymous
-  | Guest String
-  | Registered
-      { name :: String
-      , bio :: Maybe String
-      , age :: Int
-      , hobbies :: NonEmpty Array String
-      , accesslog :: NonEmpty List String
-      , balance :: Number
-      , banned :: Boolean
-      , tweets :: Array String
-      , followers :: Array User
-      }
-
-derive instance genericUser :: Generic User
-
-genericsCheck :: SC () Unit
-genericsCheck = do
-  log "Print samples of values encoded with gEncodeJson"
-  logShow $ gEncodeJson 5
-  logShow $ gEncodeJson [1, 2, 3, 5]
-  logShow $ gEncodeJson (Just "foo")
-  logShow $ gEncodeJson (Right "foo" :: Either String String)
-  logShow $ gEncodeJson $ MyRecord { foo: "foo", bar: 2}
-  logShow $ gEncodeJson "foo"
-  logShow $ gEncodeJson Anonymous
-  logShow $ gEncodeJson $ Guest "guest's handle"
-  logShow $ gEncodeJson $ Registered
-    { name: "user1"
-    , bio: Just "Ordinary User"
-    , age: 5
-    , balance: 26.6
-    , banned: false
-    , tweets: ["Hello", "What's up"]
-    , hobbies: "Jump Rope" :| ["Sightseeing"]
-    , accesslog: "223.67.92.1" :| L.singleton "210.5.2.25"
-    , followers:
-        [ Anonymous
-        , Guest "someGuest"
-        , Registered
-            { name: "user2"
-            , bio: Nothing
-            , age: 6
-            , hobbies: "Jump Rope" :| ["Cooking"]
-            , accesslog: "152.67.25.1" :| L.singleton "210.5.2.25"
-            , balance: 32.1
-            , banned: false
-            , tweets: ["Hi"]
-            , followers: []
-            }
-        ]
-    }
+    go object =
+      let keys = SM.keys object
+      in foldl (\ok key -> ok && isJust (SM.lookup key object)) true keys
 
 eitherCheck :: SC () Unit
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->
-    encodeThenDecodeEqual x
-
-encodeThenDecodeEqual :: forall a. (Eq a, Show a, EncodeJson a, DecodeJson a) => a -> Result
-encodeThenDecodeEqual v = do
-  case decodeJson (encodeJson v) of
-    Right decoded ->
-      decoded == v
-        <?> ("v = " <> show v <> ", decoded = " <> show decoded)
-    Left err ->
-      false <?> err
-
-nonEmptyCheck :: SC () Unit
-nonEmptyCheck = do
-  log "Test EncodeJson/DecodeJson NonEmpty Array and NonEmpty List"
-  quickCheck \(x :: Tuple String (Array String)) -> do
-    let ne = fst x :| snd x
-    encodeThenDecodeEqual ne
-  quickCheck \(x :: Tuple String (List String)) -> do
-    let ne = fst x :| snd x
-    encodeThenDecodeEqual ne
+    case decodeJson (encodeJson x) of
+      Right decoded ->
+        decoded == x
+          <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+      Left err ->
+        false <?> err
