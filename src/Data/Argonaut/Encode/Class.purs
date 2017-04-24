@@ -2,8 +2,8 @@ module Data.Argonaut.Encode.Class where
 
 import Prelude
 
-import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject, jsonEmptyObject, jsonSingletonObject)
-import Data.Either (Either(), either)
+import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
+import Data.Either (Either, either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
@@ -16,8 +16,8 @@ class EncodeJson a where
   encodeJson :: a -> Json
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
-  encodeJson Nothing  = jsonEmptyObject
-  encodeJson (Just a) = jsonSingletonObject "just" (encodeJson a)
+  encodeJson Nothing  = jsonNull
+  encodeJson (Just a) = encodeJson a
 
 instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a b) where
   encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
