@@ -5,7 +5,7 @@ import Prelude
 import Data.Argonaut.Core (JObject)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.StrMap as SM
 
 getField :: forall a. DecodeJson a => JObject -> String -> Either String a
@@ -27,3 +27,8 @@ getFieldOptional o s =
     decode json = Just <$> decodeJson json
 
 infix 7 getFieldOptional as .??
+
+defaultField :: forall a. Either String (Maybe a) -> a -> Either String a
+defaultField parser default = fromMaybe default <$> parser
+
+infix 6 defaultField as .?=

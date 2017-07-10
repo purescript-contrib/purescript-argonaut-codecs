@@ -4,4 +4,4 @@ module Data.Argonaut.Decode
   ) where
 
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
-import Data.Argonaut.Decode.Combinators (getField, (.?), getFieldOptional, (.??))
+import Data.Argonaut.Decode.Combinators (getField, (.?), getFieldOptional, (.??), defaultField, (.?=))
