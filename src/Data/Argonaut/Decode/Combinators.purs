@@ -17,6 +17,7 @@ getField o s =
 
 infix 7 getField as .?
 
+-- | Will return Nothing if the field isn't present
 getFieldOptional :: forall a. DecodeJson a => JObject -> String -> Either String (Maybe a)
 getFieldOptional o s =
   maybe
@@ -26,7 +27,21 @@ getFieldOptional o s =
   where
     decode json = Just <$> decodeJson json
 
-infix 7 getFieldOptional as .??
+infix 7 getFieldOptional as .?!
+
+-- | Will return Nothing if the field isn't present or the value is null
+getFieldOptional' :: forall a. DecodeJson a => JObject -> String -> Either String (Maybe a)
+getFieldOptional' o s =
+  maybe
+    (pure Nothing)
+    decodeIt
+    (SM.lookup s o)
+  where decodeIt j =
+                if isNull j
+                  then pure Nothing
+                  else Just <$> decodeJson j
+
+infix 7 getFieldOptional' as .??
 
 defaultField :: forall a. Either String (Maybe a) -> a -> Either String a
 defaultField parser default = fromMaybe default <$> parser
