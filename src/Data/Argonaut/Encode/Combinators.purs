@@ -3,8 +3,8 @@
 -- | ``` purescript
 -- | myJson
 -- |  = "key1" := value1
--- |  ~> "key2" := value2
--- | ~>? "key3" :=? value3
+-- |  ~> "key2" :=? value2
+-- | ~>? "key3" := value3
 -- |  ~> jsonEmptyOibject
 -- | ```
 module Data.Argonaut.Encode.Combinators where
