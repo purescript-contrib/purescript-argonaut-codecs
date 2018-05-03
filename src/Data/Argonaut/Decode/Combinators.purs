@@ -2,17 +2,21 @@ module Data.Argonaut.Decode.Combinators where
 
 import Prelude
 
-import Data.Argonaut.Core (JObject)
+import Data.Argonaut.Core (JObject, Json)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.StrMap as SM
 
 getField :: forall a. DecodeJson a => JObject -> String -> Either String a
-getField o s =
+getField =
+  getField' decodeJson
+
+getField' :: forall a. (Json -> Either String a) -> JObject -> String -> Either String a
+getField' f o s =
   maybe
     (Left $ "Expected field " <> show s)
-    decodeJson
+    f
     (SM.lookup s o)
 
 infix 7 getField as .?
