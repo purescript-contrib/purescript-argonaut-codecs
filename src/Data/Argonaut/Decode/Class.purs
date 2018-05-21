@@ -5,7 +5,7 @@ module Data.Argonaut.Decode.Class
 
 import Prelude
 
-import Data.Argonaut.Core (Json, JArray, JObject, isNull, foldJsonNull, foldJsonBoolean, foldJsonNumber, foldJsonString, toArray, toObject, toString)
+import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJsonNumber, caseJsonString, toArray, toObject, toString, stringify)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Int (fromNumber)
@@ -13,9 +13,9 @@ import Data.List (List(..), (:), fromFoldable)
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.String (charAt)
-import Data.StrMap as SM
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Foreign.Object as FO
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
@@ -35,21 +35,21 @@ instance decodeJsonEither :: (DecodeJson a, DecodeJson b) => DecodeJson (Either 
   decodeJson json =
     lmap ("Couldn't decode Either: " <> _) $
       decodeJObject json >>= \obj -> do
-        tag <- maybe (Left "Expected field 'tag'") Right $ SM.lookup "tag" obj
-        val <- maybe (Left "Expected field 'value'") Right $ SM.lookup "value" obj
+        tag <- maybe (Left "Expected field 'tag'") Right $ FO.lookup "tag" obj
+        val <- maybe (Left "Expected field 'value'") Right $ FO.lookup "value" obj
         case toString tag of
           Just "Right" -> Right <$> decodeJson val
           Just "Left" -> Left <$> decodeJson val
           _ -> Left "'tag' field was not \"Left\" or \"Right\""
 
 instance decodeJsonNull :: DecodeJson Unit where
-  decodeJson = foldJsonNull (Left "Value is not a null") (const $ Right unit)
+  decodeJson = caseJsonNull (Left "Value is not a null") (const $ Right unit)
 
 instance decodeJsonBoolean :: DecodeJson Boolean where
-  decodeJson = foldJsonBoolean (Left "Value is not a Boolean") Right
+  decodeJson = caseJsonBoolean (Left "Value is not a Boolean") Right
 
 instance decodeJsonNumber :: DecodeJson Number where
-  decodeJson = foldJsonNumber (Left "Value is not a Number") Right
+  decodeJson = caseJsonNumber (Left "Value is not a Number") Right
 
 instance decodeJsonInt :: DecodeJson Int where
   decodeJson
@@ -58,19 +58,19 @@ instance decodeJsonInt :: DecodeJson Int where
     <=< decodeJson
 
 instance decodeJsonString :: DecodeJson String where
-  decodeJson = foldJsonString (Left "Value is not a String") Right
+  decodeJson = caseJsonString (Left "Value is not a String") Right
 
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
 
 instance decodeJsonChar :: DecodeJson Char where
   decodeJson j =
-    maybe (Left $ "Expected character but found: " <> show j) Right
+    maybe (Left $ "Expected character but found: " <> stringify j) Right
       =<< charAt 0 <$> decodeJson j
 
-instance decodeStrMap :: DecodeJson a => DecodeJson (SM.StrMap a) where
+instance decodeForeignObject :: DecodeJson a => DecodeJson (FO.Object a) where
   decodeJson
-    = lmap ("Couldn't decode StrMap: " <> _)
+    = lmap ("Couldn't decode ForeignObject: " <> _)
     <<< (traverse decodeJson <=< decodeJObject)
 
 instance decodeArray :: DecodeJson a => DecodeJson (Array a) where
@@ -89,8 +89,8 @@ instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a
 instance decodeVoid :: DecodeJson Void where
   decodeJson _ = Left "Value cannot be Void"
 
-decodeJArray :: Json -> Either String JArray
+decodeJArray :: Json -> Either String (Array Json)
 decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 
-decodeJObject :: Json -> Either String JObject
+decodeJObject :: Json -> Either String (FO.Object Json)
 decodeJObject = maybe (Left "Value is not an Object") Right <<< toObject

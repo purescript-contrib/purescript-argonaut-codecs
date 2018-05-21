@@ -2,21 +2,22 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff.Console (log)
-import Data.Argonaut.Core (JObject, Json, isObject, toObject)
+import Data.Argonaut.Core (Json, isObject, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Gen (genJson)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
-import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
-import Test.StrongCheck (SC, quickCheck, quickCheck', (<?>))
+import Effect (Effect)
+import Effect.Console (log)
+import Foreign.Object as FO
+import Test.StrongCheck (quickCheck, quickCheck', (<?>))
 import Test.StrongCheck.Arbitrary (class Arbitrary)
 import Test.StrongCheck.Gen (suchThat, resize)
 
-main :: SC () Unit
+main :: Effect Unit
 main = do
   eitherCheck
   encodeDecodeCheck
@@ -30,7 +31,7 @@ instance encodeJsonTestJson :: EncodeJson TestJson where
 instance arbitraryTestJson :: Arbitrary TestJson where
   arbitrary = TestJson <$> (resize 5 genJson)
 
-encodeDecodeCheck :: SC () Unit
+encodeDecodeCheck :: Effect Unit
 encodeDecodeCheck = do
   log "Testing that any JSON can be encoded and then decoded"
   quickCheck' 20 prop_encode_then_decode
@@ -56,7 +57,7 @@ unObj (Obj j) = j
 instance arbitraryObj :: Arbitrary Obj where
   arbitrary = Obj <$> suchThat (resize 5 genJson) isObject
 
-combinatorsCheck :: SC () Unit
+combinatorsCheck :: Effect Unit
 combinatorsCheck = do
   log "Check assoc builder `:=`"
   quickCheck' 20 prop_assoc_builder_str
@@ -87,27 +88,27 @@ combinatorsCheck = do
   prop_assoc_append :: (Tuple (Tuple String TestJson) Obj) -> Boolean
   prop_assoc_append (Tuple (Tuple key (TestJson val)) (Obj obj)) =
     let appended = (key := val) ~> obj
-    in case toObject appended >>= SM.lookup key of
+    in case toObject appended >>= FO.lookup key of
       Just value -> true
       _ -> false
 
   prop_assoc_append_optional :: Tuple (Tuple String (Maybe TestJson)) Obj -> Boolean
   prop_assoc_append_optional (Tuple (Tuple key maybeVal) (Obj obj)) =
     let appended = (key :=? maybeVal) ~>? obj
-    in case toObject appended >>= SM.lookup key of
-      Just value -> isJust maybeVal 
-      _ -> isNothing maybeVal 
+    in case toObject appended >>= FO.lookup key of
+      Just value -> isJust maybeVal
+      _ -> isNothing maybeVal
 
   prop_get_jobject_field :: Obj -> Boolean
   prop_get_jobject_field (Obj obj) =
     maybe false go $ toObject obj
     where
-    go :: JObject -> Boolean
+    go :: FO.Object Json -> Boolean
     go object =
-      let keys = SM.keys object
-      in foldl (\ok key -> ok && isJust (SM.lookup key object)) true keys
+      let keys = FO.keys object
+      in foldl (\ok key -> ok && isJust (FO.lookup key object)) true keys
 
-eitherCheck :: SC () Unit
+eitherCheck :: Effect Unit
 eitherCheck = do
   log "Test EncodeJson/DecodeJson Either instance"
   quickCheck \(x :: Either String String) ->
