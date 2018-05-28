@@ -8,7 +8,7 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
-import Data.String (singleton)
+import Data.String.CodeUnits (singleton)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
