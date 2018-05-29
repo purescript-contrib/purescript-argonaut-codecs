@@ -22,10 +22,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "purescript-argonaut-core": "#compiler/0.12",
-    "purescript-integers": "#compiler/0.12",
-    "purescript-maybe": "#compiler/0.12",
-    "purescript-foreign-object": "#compiler/0.12"
+    "purescript-argonaut-core": "^4.0.0",
+    "purescript-integers": "^4.0.0",
+    "purescript-maybe": "^4.0.0",
+    "purescript-foreign-object": "^1.0.0"
   },
   "devDependencies": {
     "purescript-strongcheck": "#compiler/0.12"

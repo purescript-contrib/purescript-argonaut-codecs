@@ -12,7 +12,7 @@ import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
-import Data.String (charAt)
+import Data.String (CodePoint, codePointAt)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
@@ -63,10 +63,10 @@ instance decodeJsonString :: DecodeJson String where
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
 
-instance decodeJsonChar :: DecodeJson Char where
+instance decodeJsonChar :: DecodeJson CodePoint where
   decodeJson j =
     maybe (Left $ "Expected character but found: " <> stringify j) Right
-      =<< charAt 0 <$> decodeJson j
+      =<< codePointAt 0 <$> decodeJson j
 
 instance decodeForeignObject :: DecodeJson a => DecodeJson (FO.Object a) where
   decodeJson
