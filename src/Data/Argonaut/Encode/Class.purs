@@ -8,7 +8,7 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
-import Data.String.CodeUnits (singleton)
+import Data.String.CodePoints (CodePoint, codePointFromChar, singleton)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
@@ -48,8 +48,11 @@ instance encodeJsonJString :: EncodeJson String where
 instance encodeJsonJson :: EncodeJson Json where
   encodeJson = identity
 
-instance encodeJsonChar :: EncodeJson Char where
+instance encodeJsonCodePoint :: EncodeJson CodePoint where
   encodeJson = encodeJson <<< singleton
+
+instance encodeJsonChar :: EncodeJson Char where
+  encodeJson = encodeJson <<< codePointFromChar
 
 instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
   encodeJson json = fromArray (encodeJson <$> json)
