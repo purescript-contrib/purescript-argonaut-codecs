@@ -12,8 +12,7 @@ import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
-import Data.String (CodePoint)
-import Data.String.CodePoints (codePointAt)
+import Data.String (CodePoint, codePointAt)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
