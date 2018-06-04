@@ -8,9 +8,11 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
-import Data.String (singleton)
-import Data.StrMap as SM
+import Data.String (CodePoint)
+import Data.String.CodePoints as CP
+import Data.String.CodeUnits as CU
 import Data.Tuple (Tuple(..))
+import Foreign.Object as FO
 
 class EncodeJson a where
   encodeJson :: a -> Json
@@ -27,7 +29,7 @@ instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either 
     where
     obj :: forall c. EncodeJson c => String -> c -> Json
     obj tag x =
-      fromObject $ SM.fromFoldable $
+      fromObject $ FO.fromFoldable $
         Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
 
 instance encodeJsonUnit :: EncodeJson Unit where
@@ -46,10 +48,13 @@ instance encodeJsonJString :: EncodeJson String where
   encodeJson = fromString
 
 instance encodeJsonJson :: EncodeJson Json where
-  encodeJson = id
+  encodeJson = identity
+
+instance encodeJsonCodePoint :: EncodeJson CodePoint where
+  encodeJson = encodeJson <<< CP.singleton
 
 instance encodeJsonChar :: EncodeJson Char where
-  encodeJson = encodeJson <<< singleton
+  encodeJson = encodeJson <<< CU.singleton
 
 instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
   encodeJson json = fromArray (encodeJson <$> json)
@@ -57,7 +62,7 @@ instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
 instance encodeJsonList :: EncodeJson a => EncodeJson (List a) where
   encodeJson = fromArray <<< map encodeJson <<< toUnfoldable
 
-instance encodeStrMap :: EncodeJson a => EncodeJson (SM.StrMap a) where
+instance encodeForeignObject :: EncodeJson a => EncodeJson (FO.Object a) where
   encodeJson = fromObject <<< map encodeJson
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
