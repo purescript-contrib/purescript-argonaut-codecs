@@ -1,4 +1,7 @@
-module Data.Argonaut.Decode.Combinators where
+module Data.Argonaut.Decode.Combinators
+  ( getField
+  , getFieldOptional
+  ) where
 
 import Prelude
 
