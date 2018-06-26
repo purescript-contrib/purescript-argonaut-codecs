@@ -14,6 +14,7 @@ import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.String (CodePoint, codePointAt)
 import Data.Traversable (traverse)
+import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
@@ -75,8 +76,11 @@ instance decodeForeignObject :: DecodeJson a => DecodeJson (FO.Object a) where
 
 instance decodeArray :: DecodeJson a => DecodeJson (Array a) where
   decodeJson
-    = lmap ("Couldn't decode Array: " <> _)
-    <<< (traverse decodeJson <=< decodeJArray)
+    = lmap ("Couldn't decode Array (" <> _)
+    <<< (traverseWithIndex f <=< decodeJArray)
+    where
+      msg i m = "Failed at index " <> show i <> "): " <> m
+      f i = lmap (msg i) <<< decodeJson
 
 instance decodeList :: DecodeJson a => DecodeJson (List a) where
   decodeJson
