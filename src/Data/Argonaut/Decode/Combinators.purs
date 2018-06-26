@@ -1,6 +1,10 @@
 module Data.Argonaut.Decode.Combinators
   ( getField
   , getFieldOptional
+  , defaultField
+  , (.?)
+  , (.??)
+  , (.?=)
   ) where
 
 import Prelude
