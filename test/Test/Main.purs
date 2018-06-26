@@ -4,9 +4,10 @@ import Prelude
 
 import Control.Monad.Gen.Common (genMaybe)
 import Data.Argonaut.Core (Json, isObject, stringify, toObject)
-import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.?))
 import Data.Argonaut.Encode (encodeJson, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Gen (genJson)
+import Data.Argonaut.Parser (jsonParser)
 import Data.Bifunctor (rmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -14,27 +15,31 @@ import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
 import Data.String.Gen (genUnicodeString)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Console (log)
 import Foreign.Object as FO
-import Test.QuickCheck (Result(..), quickCheck, (<?>), (===))
+import Test.QuickCheck (Result(..), (<?>), (===))
 import Test.QuickCheck.Gen (Gen, resize, suchThat)
+import Test.Unit (TestSuite, test, suite, failure)
+import Test.Unit.Assert as Assert
+import Test.Unit.Main (runTest)
+import Test.Unit.QuickCheck (quickCheck)
 
 main :: Effect Unit
-main = do
-  eitherCheck
-  encodeDecodeCheck
-  combinatorsCheck
+main = runTest do
+  suite "Either Check" eitherCheck
+  suite "Encode/Decode Checks" encodeDecodeCheck
+  suite "Combinators Checks" combinatorsCheck
+  suite "Error Message Checks" errorMsgCheck
 
 genTestJson :: Gen Json
 genTestJson = resize 5 genJson
 
-encodeDecodeCheck :: Effect Unit
+encodeDecodeCheck :: TestSuite
 encodeDecodeCheck = do
-  log "Testing that any JSON can be encoded and then decoded"
-  quickCheck prop_encode_then_decode
+  test "Testing that any JSON can be encoded and then decoded" do
+    quickCheck prop_encode_then_decode
 
-  log "Testing that any JSON can be decoded and then encoded"
-  quickCheck prop_decode_then_encode
+  test "Testing that any JSON can be decoded and then encoded" do
+    quickCheck prop_decode_then_encode
 
   where
 
@@ -54,18 +59,18 @@ encodeDecodeCheck = do
 genObj :: Gen Json
 genObj = suchThat (resize 5 genJson) isObject
 
-combinatorsCheck :: Effect Unit
+combinatorsCheck :: TestSuite
 combinatorsCheck = do
-  log "Check assoc builder `:=`"
-  quickCheck prop_assoc_builder_str
-  log "Check assocOptional builder `:=?`"
-  quickCheck prop_assoc_optional_builder_str
-  log "Check JAssoc append `~>`"
-  quickCheck prop_assoc_append
-  log "Check JAssoc appendOptional `~>?`"
-  quickCheck prop_assoc_append_optional
-  log "Check get field `obj .? 'foo'`"
-  quickCheck prop_get_jobject_field
+  test "Check assoc builder `:=`" do
+    quickCheck prop_assoc_builder_str
+  test "Check assocOptional builder `:=?`" do
+    quickCheck prop_assoc_optional_builder_str
+  test "Check JAssoc append `~>`" do
+    quickCheck prop_assoc_append
+  test "Check JAssoc appendOptional `~>?`" do
+    quickCheck prop_assoc_append_optional
+  test "Check get field `obj .? 'foo'`" do
+    quickCheck prop_get_jobject_field
 
   where
 
@@ -116,13 +121,53 @@ combinatorsCheck = do
       let keys = FO.keys object
       in foldl (\ok key -> ok && isJust (FO.lookup key object)) true keys
 
-eitherCheck :: Effect Unit
+eitherCheck :: TestSuite
 eitherCheck = do
-  log "Test EncodeJson/DecodeJson Either instance"
-  quickCheck \(x :: Either String String) ->
-    case decodeJson (encodeJson x) of
-      Right decoded ->
-        decoded == x
-          <?> ("x = " <> show x <> ", decoded = " <> show decoded)
-      Left err ->
-        false <?> err
+  test "Test EncodeJson/DecodeJson Either test" do
+    quickCheck \(x :: Either String String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
+
+errorMsgCheck :: TestSuite
+errorMsgCheck = do
+  test "Test that decoding array fails with the proper message" do
+    case notBar of
+      Left err -> Assert.equal barErr err
+      _ -> failure "Should have failed to decode"
+  test "Test that decoding record fails with the proper message" do
+    case notBaz of
+      Left err -> Assert.equal bazErr err
+      _ -> failure "Should have failed to decode"
+
+  where
+
+    barErr :: String
+    barErr = "Failed to decode key 'bar': "
+      <> "Couldn't decode Array (Failed at index 1): "
+      <> "Value is not a Number"
+
+    bazErr :: String
+    bazErr = "Failed to decode key 'baz': "
+      <> "Value is not a Boolean"
+
+    notBar :: Either String Foo
+    notBar = decodeJson =<< jsonParser "{ \"bar\": [1, true, 3], \"baz\": false }"
+
+    notBaz :: Either String Foo
+    notBaz = decodeJson =<< jsonParser "{ \"bar\": [1, 2, 3], \"baz\": 42 }"
+
+newtype Foo = Foo
+  { bar :: Array Int
+  , baz :: Boolean
+  }
+
+instance decodeJsonFoo :: DecodeJson Foo where
+  decodeJson json = do
+    x <- decodeJson json
+    bar <- x .? "bar"
+    baz <- x .? "baz"
+    pure $ Foo { bar, baz }

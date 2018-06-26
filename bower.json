@@ -29,6 +29,7 @@
     "purescript-foreign-object": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-quickcheck": "^5.0.0"
+    "purescript-quickcheck": "^5.0.0",
+    "purescript-test-unit": "^14.0.0"
   }
 }
