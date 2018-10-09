@@ -13,10 +13,15 @@ import Data.List (List(..), (:), fromFoldable)
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.String (CodePoint, codePointAt)
+import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
+import Prim.Row as Row
+import Prim.RowList as RL
+import Record as Record
+import Type.Data.RowList (RLProxy(..))
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
@@ -98,3 +103,41 @@ decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 
 decodeJObject :: Json -> Either String (FO.Object Json)
 decodeJObject = maybe (Left "Value is not an Object") Right <<< toObject
+
+
+instance decodeRecord :: (GDecodeJson row list, RL.RowToList row list) => DecodeJson (Record row) where
+  decodeJson json =
+    case toObject json of
+      Just object -> gDecodeJson object (RLProxy :: RLProxy list)
+      Nothing     -> Left "Could not convert JSON to object"
+
+class GDecodeJson (row :: # Type) (list :: RL.RowList) | list -> row where
+  gDecodeJson :: FO.Object Json -> RLProxy list -> Either String (Record row)
+
+instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
+  gDecodeJson _ _ = Right {}
+
+instance gDecodeJsonCons
+  :: ( DecodeJson value
+     , GDecodeJson rowTail tail
+     , IsSymbol field
+     , Row.Cons field value rowTail row
+     , Row.Lacks field rowTail
+     )
+  => GDecodeJson row (RL.Cons field value tail) where
+  
+  gDecodeJson object _ = do
+    let sProxy :: SProxy field
+        sProxy = SProxy
+
+        fieldName = reflectSymbol sProxy
+    
+    rest <- gDecodeJson object (RLProxy :: RLProxy tail)
+
+    case FO.lookup fieldName object of
+      Just jsonVal -> do
+        val <- decodeJson jsonVal
+        Right $ Record.insert sProxy val rest
+
+      Nothing ->
+        Left $ "JSON was missing expected field: " <> fieldName
