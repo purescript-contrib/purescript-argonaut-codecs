@@ -1,7 +1,4 @@
-module Data.Argonaut.Decode.Class
-  ( class DecodeJson
-  , decodeJson
-  ) where
+module Data.Argonaut.Decode.Class where
 
 import Prelude
 
