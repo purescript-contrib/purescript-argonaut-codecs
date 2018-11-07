@@ -76,9 +76,13 @@ instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a
 instance encodeVoid :: EncodeJson Void where
   encodeJson = absurd
 
-instance encodeRecord :: (GEncodeJson row list, RL.RowToList row list) => EncodeJson (Record row) where
-  encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
+instance encodeRecord
+  :: ( GEncodeJson row list
+     , RL.RowToList row list
+     )
+  => EncodeJson (Record row) where
 
+  encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
 
 class GEncodeJson (row :: # Type) (list :: RL.RowList) where
   gEncodeJson :: Record row -> RLProxy list -> FO.Object Json
@@ -93,7 +97,7 @@ instance gEncodeJsonCons
      , Row.Cons field value tail' row
      )
   => GEncodeJson row (RL.Cons field value tail) where
-  
+
   gEncodeJson row _ =
     let
       sProxy :: SProxy field

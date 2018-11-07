@@ -101,8 +101,12 @@ decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
 decodeJObject :: Json -> Either String (FO.Object Json)
 decodeJObject = maybe (Left "Value is not an Object") Right <<< toObject
 
+instance decodeRecord
+  :: ( GDecodeJson row list
+     , RL.RowToList row list
+     )
+  => DecodeJson (Record row) where
 
-instance decodeRecord :: (GDecodeJson row list, RL.RowToList row list) => DecodeJson (Record row) where
   decodeJson json =
     case toObject json of
       Just object -> gDecodeJson object (RLProxy :: RLProxy list)
@@ -122,13 +126,13 @@ instance gDecodeJsonCons
      , Row.Lacks field rowTail
      )
   => GDecodeJson row (RL.Cons field value tail) where
-  
+
   gDecodeJson object _ = do
     let sProxy :: SProxy field
         sProxy = SProxy
 
         fieldName = reflectSymbol sProxy
-    
+
     rest <- gDecodeJson object (RLProxy :: RLProxy tail)
 
     case FO.lookup fieldName object of
