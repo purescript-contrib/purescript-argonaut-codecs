@@ -17,18 +17,43 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Foreign.Object as FO
 import Test.QuickCheck (Result(..), (<?>), (===))
+import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (Gen, resize, suchThat)
 import Test.Unit (TestSuite, test, suite, failure)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTest)
 import Test.Unit.QuickCheck (quickCheck)
 
+
 main :: Effect Unit
 main = runTest do
   suite "Either Check" eitherCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
+  suite "Encode/Decode Record Checks" encodeDecodeRecordCheck
   suite "Combinators Checks" combinatorsCheck
   suite "Error Message Checks" errorMsgCheck
+
+
+genTestRecord
+  :: Gen (Record
+       ( i :: Int
+       , n :: Number
+       , s :: String
+       ))
+genTestRecord = arbitrary
+
+encodeDecodeRecordCheck :: TestSuite
+encodeDecodeRecordCheck = do
+  test "Testing that any record can be encoded and then decoded" do
+    quickCheck rec_encode_then_decode
+
+  where
+   rec_encode_then_decode :: Gen Result
+   rec_encode_then_decode = do
+    rec <- genTestRecord
+    let redecoded = decodeJson (encodeJson rec)
+    pure $ Right rec == redecoded <?> (show redecoded <> " /= Right " <> show rec)
+    
 
 genTestJson :: Gen Json
 genTestJson = resize 5 genJson
