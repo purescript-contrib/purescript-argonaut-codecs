@@ -18,6 +18,36 @@ bower install purescript-argonaut-codecs
 
 Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-argonaut-codecs).
 
+## Example
+
+Using [purescript-argonaut-core](https://github.com/purescript-contrib/purescript-argonaut-core) we can build a simple `Json` object:
+
+```purescript
+someObject =
+  let 
+    objects = 
+      [ jsonSingletonObject "bar" (fromString "a")
+      , jsonSingletonObject "bar" (fromString "b")
+      ]
+  in
+    fromObject $ Object.fromFoldable [ Tuple "foo" (fromArray objects) ]
+```
+
+The `decodeJson` and `.?` functions provided in this module make it straightforward to interrogate the `Json` object:
+
+```purescript
+main =
+  log $ show $ getBars someObject
+
+getBars :: Json -> Either String (Array String)
+getBars json = do
+  obj <- decodeJson json
+  foo <- obj .? "foo"
+  for foo \itemJson -> do
+    itemObj <- decodeJson itemJson
+    itemObj .? "bar"
+```
+
 ## Contributing
 
 Read the [contribution guidelines](https://github.com/purescript-contrib/purescript-argonaut-codecs/blob/master/.github/contributing.md) to get started and see helpful related resources.
