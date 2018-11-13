@@ -1,15 +1,17 @@
 module Data.Argonaut.Decode.Combinators
   ( getField
   , getFieldOptional
+  , getFieldOptional'
   , defaultField
-  , (.?)
-  , (.??)
-  , (.?=)
+  , (.:)
+  , (.:!)
+  , (.:?)
+  , (.!=)
   ) where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (Json, isNull)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
@@ -23,7 +25,7 @@ getField o s =
     (elaborateFailure s <<< decodeJson)
     (FO.lookup s o)
 
-infix 7 getField as .?
+infix 7 getField as .:
 
 getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
 getFieldOptional o s =
@@ -34,12 +36,26 @@ getFieldOptional o s =
   where
     decode json = Just <$> (elaborateFailure s <<< decodeJson) json
 
-infix 7 getFieldOptional as .??
+infix 7 getFieldOptional as .:!
+
+getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional' o s =
+  maybe
+    (pure Nothing)
+    decode
+    (FO.lookup s o)
+  where
+    decode json =
+      if isNull json
+        then pure Nothing
+        else Just <$> decodeJson json
+
+infix 7 getFieldOptional' as .:?
 
 defaultField :: forall a. Either String (Maybe a) -> a -> Either String a
 defaultField parser default = fromMaybe default <$> parser
 
-infix 6 defaultField as .?=
+infix 6 defaultField as .!=
 
 elaborateFailure :: ∀ a. String -> Either String a -> Either String a
 elaborateFailure s e =
