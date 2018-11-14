@@ -1,7 +1,7 @@
 module Data.Argonaut.Decode.Combinators
-  ( getField
-  , getFieldOptional
-  , getFieldOptional'
+  ( parseField
+  , parseFieldOptional
+  , parseFieldOptional'
   , defaultField
   , (.:)
   , (.:!)
@@ -21,15 +21,15 @@ import Foreign.Object as FO
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
 -- | Use this accessor if the key and value *must* be present in your object.
--- | If the key and value are optional, use `getFieldOptional'` (`.:?`) instead.
-getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
-getField o s =
+-- | If the key and value are optional, use `parseFieldOptional'` (`.:?`) instead.
+parseField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
+parseField o s =
   maybe
     (Left $ "Expected field " <> show s)
     (elaborateFailure s <<< decodeJson)
     (FO.lookup s o)
 
-infix 7 getField as .:
+infix 7 parseField as .:
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
@@ -37,9 +37,9 @@ infix 7 getField as .:
 -- | or if the key is present and the value is `null`.
 -- |
 -- | Use this accessor if the key and value are optional in your object.
--- | If the key and value are mandatory, use `getField` (`.:`) instead.
-getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional' o s =
+-- | If the key and value are mandatory, use `parseField` (`.:`) instead.
+parseFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+parseFieldOptional' o s =
   maybe
     (pure Nothing)
     decode
@@ -50,7 +50,7 @@ getFieldOptional' o s =
         then pure Nothing
         else Just <$> decodeJson json
 
-infix 7 getFieldOptional' as .:?
+infix 7 parseFieldOptional' as .:?
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
@@ -59,9 +59,9 @@ infix 7 getFieldOptional' as .:?
 -- |
 -- | This function will treat `null` as a value and attempt to decode it into your desired type.
 -- | If you would like to treat `null` values the same as absent values, use
--- | `getFieldOptional` (`.:?`) instead.
-getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional o s =
+-- | `parseFieldOptional` (`.:?`) instead.
+parseFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+parseFieldOptional o s =
   maybe
     (pure Nothing)
     decode
@@ -69,7 +69,7 @@ getFieldOptional o s =
   where
     decode json = Just <$> (elaborateFailure s <<< decodeJson) json
 
-infix 7 getFieldOptional as .:!
+infix 7 parseFieldOptional as .:!
 
 -- | Helper for use in combination with `.:?` to provide default values for optional
 -- | `Object Json` fields.
