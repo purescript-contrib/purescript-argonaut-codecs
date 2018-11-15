@@ -2,25 +2,32 @@ module Data.Argonaut.Encode.Class where
 
 import Prelude
 
-import Data.Argonaut.Core (Json(), jsonNull, fromBoolean, fromNumber, fromString, fromArray, fromObject, jsonEmptyObject, jsonSingletonObject)
-import Data.Either (Either(), either)
+import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
 import Data.Array as Arr
+import Data.Either (Either, either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.List as L
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))
-import Data.String (singleton)
-import Data.StrMap as SM
+import Data.String (CodePoint)
+import Data.String.CodePoints as CP
+import Data.String.CodeUnits as CU
+import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Foreign.Object as FO
+import Prim.Row as Row
+import Prim.RowList as RL
+import Record as Record
+import Type.Data.RowList (RLProxy(..))
 
 class EncodeJson a where
   encodeJson :: a -> Json
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
-  encodeJson Nothing  = jsonEmptyObject
-  encodeJson (Just a) = jsonSingletonObject "just" (encodeJson a)
+  encodeJson Nothing  = jsonNull
+  encodeJson (Just a) = encodeJson a
 
 instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a b) where
   encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
@@ -30,7 +37,7 @@ instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either 
     where
     obj :: forall c. EncodeJson c => String -> c -> Json
     obj tag x =
-      fromObject $ SM.fromFoldable $
+      fromObject $ FO.fromFoldable $
         Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
 
 instance encodeJsonUnit :: EncodeJson Unit where
@@ -49,7 +56,10 @@ instance encodeJsonJString :: EncodeJson String where
   encodeJson = fromString
 
 instance encodeJsonJson :: EncodeJson Json where
-  encodeJson = id
+  encodeJson = identity
+
+instance encodeJsonCodePoint :: EncodeJson CodePoint where
+  encodeJson = encodeJson <<< CP.singleton
 
 instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
   encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h t
@@ -58,7 +68,7 @@ instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmpty List a
   encodeJson (NonEmpty h t) = encodeJson $ L.insertAt 0 h t
 
 instance encodeJsonChar :: EncodeJson Char where
-  encodeJson = encodeJson <<< singleton
+  encodeJson = encodeJson <<< CU.singleton
 
 instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
   encodeJson json = fromArray (encodeJson <$> json)
@@ -66,7 +76,7 @@ instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
 instance encodeJsonList :: EncodeJson a => EncodeJson (List a) where
   encodeJson = fromArray <<< map encodeJson <<< toUnfoldable
 
-instance encodeStrMap :: EncodeJson a => EncodeJson (SM.StrMap a) where
+instance encodeForeignObject :: EncodeJson a => EncodeJson (FO.Object a) where
   encodeJson = fromObject <<< map encodeJson
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
@@ -74,3 +84,35 @@ instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a
 
 instance encodeVoid :: EncodeJson Void where
   encodeJson = absurd
+
+instance encodeRecord
+  :: ( GEncodeJson row list
+     , RL.RowToList row list
+     )
+  => EncodeJson (Record row) where
+
+  encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
+
+class GEncodeJson (row :: # Type) (list :: RL.RowList) where
+  gEncodeJson :: Record row -> RLProxy list -> FO.Object Json
+
+instance gEncodeJsonNil :: GEncodeJson row RL.Nil where
+  gEncodeJson _ _ = FO.empty
+
+instance gEncodeJsonCons
+  :: ( EncodeJson value
+     , GEncodeJson row tail
+     , IsSymbol field
+     , Row.Cons field value tail' row
+     )
+  => GEncodeJson row (RL.Cons field value tail) where
+
+  gEncodeJson row _ =
+    let
+      sProxy :: SProxy field
+      sProxy = SProxy
+    in
+      FO.insert
+        (reflectSymbol sProxy)
+        (encodeJson $ Record.get sProxy row)
+        (gEncodeJson row $ RLProxy :: RLProxy tail)

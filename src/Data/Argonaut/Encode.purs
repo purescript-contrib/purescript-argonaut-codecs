@@ -4,4 +4,13 @@ module Data.Argonaut.Encode
   ) where
 
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
-import Data.Argonaut.Encode.Combinators (assoc, extend, (:=), (~>))
+import Data.Argonaut.Encode.Combinators 
+  ( assoc
+  , assocOptional
+  , extend
+  , extendOptional
+  , (:=)
+  , (:=?)
+  , (~>)
+  , (~>?)
+  )
