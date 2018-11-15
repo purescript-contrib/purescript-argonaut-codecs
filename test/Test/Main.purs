@@ -11,7 +11,9 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Bifunctor (rmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
+import Data.List (List)
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
+import Data.NonEmpty (NonEmpty)
 import Data.String.Gen (genUnicodeString)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -28,6 +30,7 @@ import Test.Unit.QuickCheck (quickCheck)
 main :: Effect Unit
 main = runTest do
   suite "Either Check" eitherCheck
+  suite "Encode/Decode NonEmpty Check" nonEmptyCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
   suite "Encode/Decode Record Checks" encodeDecodeRecordCheck
   suite "Combinators Checks" combinatorsCheck
@@ -150,6 +153,25 @@ eitherCheck :: TestSuite
 eitherCheck = do
   test "Test EncodeJson/DecodeJson Either test" do
     quickCheck \(x :: Either String String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
+
+nonEmptyCheck :: TestSuite
+nonEmptyCheck = do
+  test "Test EncodeJson/DecodeJson on NonEmpty Array" do
+    quickCheck \(x :: NonEmpty Array String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
+  test "Test EncodeJson/DecodeJson on NonEmpty List" do
+    quickCheck \(x :: NonEmpty List String) ->
       case decodeJson (encodeJson x) of
         Right decoded ->
           decoded == x

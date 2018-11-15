@@ -3,11 +3,14 @@ module Data.Argonaut.Encode.Class where
 import Prelude
 
 import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
+import Data.Array as Arr
 import Data.Either (Either, either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
+import Data.List as L
 import Data.Map as M
 import Data.Maybe (Maybe(..))
+import Data.NonEmpty (NonEmpty(..))
 import Data.String (CodePoint)
 import Data.String.CodePoints as CP
 import Data.String.CodeUnits as CU
@@ -57,6 +60,12 @@ instance encodeJsonJson :: EncodeJson Json where
 
 instance encodeJsonCodePoint :: EncodeJson CodePoint where
   encodeJson = encodeJson <<< CP.singleton
+
+instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
+  encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h t
+
+instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
+  encodeJson (NonEmpty h t) = encodeJson $ L.insertAt 0 h t
 
 instance encodeJsonChar :: EncodeJson Char where
   encodeJson = encodeJson <<< CU.singleton
