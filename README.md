@@ -33,7 +33,7 @@ someObject =
     fromObject $ Object.fromFoldable [ Tuple "foo" (fromArray objects) ]
 ```
 
-The `decodeJson` and `.:` functions provided in this module make it straightforward to interrogate the `Json` object:
+The `decodeJson`, `.:`, `.:?`, and `.!=` functions provided in this module make it straightforward to interrogate the `Json` object:
 
 ```purescript
 newtype MyType = MyType
