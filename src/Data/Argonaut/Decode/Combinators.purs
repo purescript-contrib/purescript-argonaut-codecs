@@ -1,12 +1,18 @@
 module Data.Argonaut.Decode.Combinators
-  ( parseField
-  , parseFieldOptional
-  , parseFieldOptional'
+  ( getField
+  , getFieldDeprecated
+  , getFieldOptional
+  , getFieldOptionalDeprecated
+  , getFieldOptional'
   , defaultField
+  , defaultFieldDeprecated
   , (.:)
+  , (.?)
   , (.:!)
   , (.:?)
+  , (.??)
   , (.!=)
+  , (.?=)
   ) where
 
 import Prelude
@@ -17,19 +23,30 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Foreign.Object as FO
+import Prim.TypeError (class Warn, Text)
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
 -- | Use this accessor if the key and value *must* be present in your object.
--- | If the key and value are optional, use `parseFieldOptional'` (`.:?`) instead.
-parseField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
-parseField o s =
+-- | If the key and value are optional, use `getFieldOptional'` (`.:?`) instead.
+getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
+getField o s =
   maybe
     (Left $ "Expected field " <> show s)
     (elaborateFailure s <<< decodeJson)
     (FO.lookup s o)
 
-infix 7 parseField as .:
+infix 7 getField as .:
+
+getFieldDeprecated
+  :: forall a. Warn ( Text "`.?` is deprecated, use `.:` instead" )
+  => DecodeJson a
+  => FO.Object Json
+  -> String
+  -> Either String a
+getFieldDeprecated = getField
+
+infix 7 getFieldDeprecated as .?
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
@@ -37,9 +54,9 @@ infix 7 parseField as .:
 -- | or if the key is present and the value is `null`.
 -- |
 -- | Use this accessor if the key and value are optional in your object.
--- | If the key and value are mandatory, use `parseField` (`.:`) instead.
-parseFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-parseFieldOptional' o s =
+-- | If the key and value are mandatory, use `getField` (`.:`) instead.
+getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional' o s =
   maybe
     (pure Nothing)
     decode
@@ -50,7 +67,7 @@ parseFieldOptional' o s =
         then pure Nothing
         else Just <$> decodeJson json
 
-infix 7 parseFieldOptional' as .:?
+infix 7 getFieldOptional' as .:?
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
@@ -59,9 +76,9 @@ infix 7 parseFieldOptional' as .:?
 -- |
 -- | This function will treat `null` as a value and attempt to decode it into your desired type.
 -- | If you would like to treat `null` values the same as absent values, use
--- | `parseFieldOptional` (`.:?`) instead.
-parseFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-parseFieldOptional o s =
+-- | `getFieldOptional` (`.:?`) instead.
+getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional o s =
   maybe
     (pure Nothing)
     decode
@@ -69,7 +86,17 @@ parseFieldOptional o s =
   where
     decode json = Just <$> (elaborateFailure s <<< decodeJson) json
 
-infix 7 parseFieldOptional as .:!
+infix 7 getFieldOptional as .:!
+
+getFieldOptionalDeprecated
+  :: forall a. Warn ( Text "`.??` is deprecated, use `.:!` or `.:?` instead" )
+  => DecodeJson a
+  => FO.Object Json
+  -> String
+  -> Either String (Maybe a)
+getFieldOptionalDeprecated = getFieldOptional
+
+infix 7 getFieldOptionalDeprecated as .??
 
 -- | Helper for use in combination with `.:?` to provide default values for optional
 -- | `Object Json` fields.
@@ -94,6 +121,13 @@ defaultField :: forall a. Either String (Maybe a) -> a -> Either String a
 defaultField parser default = fromMaybe default <$> parser
 
 infix 6 defaultField as .!=
+
+defaultFieldDeprecated
+  :: forall a. Warn ( Text "`.?=` is deprecated, use `.!=` instead" )
+  => Either String (Maybe a) -> a -> Either String a
+defaultFieldDeprecated = defaultField
+
+infix 6 defaultFieldDeprecated as .?=
 
 elaborateFailure :: ∀ a. String -> Either String a -> Either String a
 elaborateFailure s e =

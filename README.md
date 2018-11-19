@@ -57,6 +57,14 @@ decodeMyTypes json = do
   x <- decodeJson json
   arr <- x .: "myTypes"
   for arr decodeJson
+
+-- create a `EncodeJson` instance
+instance encodeJsonMyType :: EncodeJson MyType where
+  encodeJson (MyType x) =
+    "foo" := x.foo ~>
+    "bar" :=? x.bar ~>? -- optional field
+    "baz" := x.baz ~>
+    jsonEmptyObject
 ```
 
 ## Contributing
