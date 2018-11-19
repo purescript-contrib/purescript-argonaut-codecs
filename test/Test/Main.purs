@@ -11,7 +11,9 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Bifunctor (rmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
+import Data.List (List)
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
+import Data.NonEmpty (NonEmpty)
 import Data.String.Gen (genUnicodeString)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -28,10 +30,11 @@ import Test.Unit.QuickCheck (quickCheck)
 main :: Effect Unit
 main = runTest do
   suite "Either Check" eitherCheck
+  suite "Encode/Decode NonEmpty Check" nonEmptyCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
   suite "Encode/Decode Record Checks" encodeDecodeRecordCheck
   suite "Combinators Checks" combinatorsCheck
-  suite "Manual Combinators Checks" manualCombinatorsCheck
+  suite "Manual Combinators Checks" manualRecordDecode
   suite "Error Message Checks" errorMsgCheck
 
 
@@ -158,8 +161,8 @@ eitherCheck = do
         Left err ->
           false <?> err
 
-manualCombinatorsCheck :: TestSuite
-manualCombinatorsCheck = do
+manualRecordDecode :: TestSuite
+manualRecordDecode = do
   test "Test that decoding custom record is successful" do
     case decodeJson =<< jsonParser fooJson of
       Right (Foo _) -> success
@@ -260,6 +263,25 @@ manualCombinatorsCheck = do
 
   fooNestedFullJson :: String
   fooNestedFullJson = """{ "bar": [1], "baz": true }"""
+
+nonEmptyCheck :: TestSuite
+nonEmptyCheck = do
+  test "Test EncodeJson/DecodeJson on NonEmpty Array" do
+    quickCheck \(x :: NonEmpty Array String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
+  test "Test EncodeJson/DecodeJson on NonEmpty List" do
+    quickCheck \(x :: NonEmpty List String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
 
 errorMsgCheck :: TestSuite
 errorMsgCheck = do

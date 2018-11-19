@@ -3,12 +3,15 @@ module Data.Argonaut.Decode.Class where
 import Prelude
 
 import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJsonNumber, caseJsonString, toArray, toObject, toString, stringify)
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
+import Data.Array as Arr
+import Data.Bifunctor (lmap, rmap)
+import Data.Either (Either(..), note)
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
+import Data.List as L
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
+import Data.NonEmpty (NonEmpty, (:|))
 import Data.String (CodePoint, codePointAt)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
@@ -65,6 +68,16 @@ instance decodeJsonString :: DecodeJson String where
 
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
+
+instance decodeJsonNonEmptyArray :: (DecodeJson a) => DecodeJson (NonEmpty Array a) where
+  decodeJson
+    = lmap ("Couldn't decode NonEmpty Array: " <> _)
+    <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
+
+instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmpty List a) where
+  decodeJson
+    = lmap ("Couldn't decode NonEmpty List: " <> _)
+    <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
 
 instance decodeJsonChar :: DecodeJson CodePoint where
   decodeJson j =

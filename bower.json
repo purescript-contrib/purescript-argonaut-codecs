@@ -27,7 +27,9 @@
     "purescript-maybe": "^4.0.0",
     "purescript-ordered-collections": "^1.0.0",
     "purescript-foreign-object": "^1.0.0",
-    "purescript-record": "^1.0.0"
+    "purescript-record": "^1.0.0",
+    "purescript-nonempty": "^5.0.0",
+    "purescript-arrays": "^5.1.0"
   },
   "devDependencies": {
     "purescript-test-unit": "^14.0.0"
