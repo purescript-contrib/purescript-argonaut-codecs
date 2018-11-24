@@ -33,7 +33,7 @@ someObject =
     fromObject $ Object.fromFoldable [ Tuple "foo" (fromArray objects) ]
 ```
 
-The `decodeJson`, `.:`, `.:?`, and `.!=` functions provided in this module make it straightforward to interrogate the `Json` object:
+The `decodeJson`, `.:`, `.:?`, and `.!=` functions provided in this module make it straightforward to decode this JSON to a custom data type and serialize that custom data type back to JSON:
 
 ```purescript
 newtype MyType = MyType
@@ -61,10 +61,10 @@ decodeMyTypes json = do
 -- create a `EncodeJson` instance
 instance encodeJsonMyType :: EncodeJson MyType where
   encodeJson (MyType x) =
-    "foo" := x.foo ~>
-    "bar" :=? x.bar ~>? -- optional field
-    "baz" := x.baz ~>
-    jsonEmptyObject
+    "foo" := x.foo 
+      ~> "bar" :=? x.bar 
+      ~>? "baz" := x.baz -- optional field
+      ~> jsonEmptyObject
 ```
 
 ## Contributing
