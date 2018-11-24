@@ -2,7 +2,6 @@ module Data.Argonaut.Decode.Class where
 
 import Prelude
 
-import Control.Alternative (class Plus)
 import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJsonNumber, caseJsonString, toArray, toObject, toString, stringify)
 import Data.Array as Arr
 import Data.Bifunctor (lmap, rmap)
@@ -12,7 +11,7 @@ import Data.List (List(..), (:), fromFoldable)
 import Data.List as L
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
-import Data.NonEmpty (NonEmpty, singleton, (:|))
+import Data.NonEmpty (NonEmpty, (:|))
 import Data.String (CodePoint, codePointAt)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)

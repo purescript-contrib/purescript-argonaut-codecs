@@ -24,8 +24,8 @@ Using [purescript-argonaut-core](https://github.com/purescript-contrib/purescrip
 
 ```purescript
 someObject =
-  let 
-    objects = 
+  let
+    objects =
       [ jsonSingletonObject "bar" (fromString "a")
       , jsonSingletonObject "bar" (fromString "b")
       ]
@@ -33,19 +33,38 @@ someObject =
     fromObject $ Object.fromFoldable [ Tuple "foo" (fromArray objects) ]
 ```
 
-The `decodeJson` and `.?` functions provided in this module make it straightforward to interrogate the `Json` object:
+The `decodeJson`, `.:`, `.:?`, and `.!=` functions provided in this module make it straightforward to interrogate the `Json` object:
 
 ```purescript
-main =
-  log $ show $ getBars someObject
+newtype MyType = MyType
+  { foo :: String
+  , bar :: Maybe Int
+  , baz :: Boolean
+  }
 
-getBars :: Json -> Either String (Array String)
-getBars json = do
-  obj <- decodeJson json
-  foo <- obj .? "foo"
-  for foo \itemJson -> do
-    itemObj <- decodeJson itemJson
-    itemObj .? "bar"
+-- create a `DecodeJson` instance
+instance decodeJsonMyType :: DecodeJson MyType where
+  decodeJson json = do
+    x <- decodeJson json
+    foo <- x .: "foo" -- mandatory field
+    bar <- x .:? "bar" -- optional field
+    baz <- x .:? "baz" .!= false -- optional field with default value of `false`
+    pure $ MyType { foo, bar, baz }
+
+-- or pass a function
+decodeMyTypes :: Json -> Either String (Array MyType)
+decodeMyTypes json = do
+  x <- decodeJson json
+  arr <- x .: "myTypes"
+  for arr decodeJson
+
+-- create a `EncodeJson` instance
+instance encodeJsonMyType :: EncodeJson MyType where
+  encodeJson (MyType x) =
+    "foo" := x.foo ~>
+    "bar" :=? x.bar ~>? -- optional field
+    "baz" := x.baz ~>
+    jsonEmptyObject
 ```
 
 ## Contributing
