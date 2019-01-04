@@ -11,6 +11,7 @@ import Data.List as L
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))
+import Data.Set as S
 import Data.String (CodePoint)
 import Data.String.CodePoints as CP
 import Data.String.CodeUnits as CU
@@ -78,6 +79,9 @@ instance encodeJsonList :: EncodeJson a => EncodeJson (List a) where
 
 instance encodeForeignObject :: EncodeJson a => EncodeJson (FO.Object a) where
   encodeJson = fromObject <<< map encodeJson
+
+instance encodeSet :: (Ord a, EncodeJson a) => EncodeJson (S.Set a) where
+  encodeJson = encodeJson <<< (S.toUnfoldable :: S.Set a -> List a)
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
   encodeJson = encodeJson <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))

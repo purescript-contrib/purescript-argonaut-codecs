@@ -12,6 +12,7 @@ import Data.List as L
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.NonEmpty (NonEmpty, (:|))
+import Data.Set as S
 import Data.String (CodePoint, codePointAt)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
@@ -101,6 +102,9 @@ instance decodeList :: DecodeJson a => DecodeJson (List a) where
   decodeJson
     = lmap ("Couldn't decode List: " <> _)
     <<< (traverse decodeJson <=< map (map fromFoldable) decodeJArray)
+
+instance decodeSet :: (Ord a, DecodeJson a) => DecodeJson (S.Set a) where
+  decodeJson = map (S.fromFoldable :: List a -> S.Set a) <<< decodeJson
 
 instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a b) where
   decodeJson = map (M.fromFoldable :: List (Tuple a b) -> M.Map a b) <<< decodeJson
