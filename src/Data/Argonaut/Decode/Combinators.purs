@@ -76,7 +76,7 @@ infix 7 getFieldOptional' as .:?
 -- |
 -- | This function will treat `null` as a value and attempt to decode it into your desired type.
 -- | If you would like to treat `null` values the same as absent values, use
--- | `getFieldOptional` (`.:?`) instead.
+-- | `getFieldOptional'` (`.:?`) instead.
 getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
 getFieldOptional o s =
   maybe
