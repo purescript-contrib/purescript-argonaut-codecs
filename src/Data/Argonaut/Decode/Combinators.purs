@@ -65,7 +65,7 @@ getFieldOptional' o s =
     decode json =
       if isNull json
         then pure Nothing
-        else Just <$> decodeJson json
+        else Just <$> (elaborateFailure s <<< decodeJson) json
 
 infix 7 getFieldOptional' as .:?
 
