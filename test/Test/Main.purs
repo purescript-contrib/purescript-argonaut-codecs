@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Control.Monad.Gen.Common (genMaybe)
+import Control.Monad.Reader (ReaderT, ask, local, runReaderT)
 import Data.Argonaut.Core (Json, isObject, stringify, toObject)
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:!), (.:?), (.!=))
 import Data.Argonaut.Encode (encodeJson, (:=), (:=?), (~>), (~>?))
@@ -12,23 +13,54 @@ import Data.Bifunctor (rmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.List (List)
+import Data.List as List
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
+import Data.Monoid (power)
 import Data.NonEmpty (NonEmpty)
 import Data.String.Gen (genUnicodeString)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
+import Effect.Exception (throw)
 import Foreign.Object as FO
-import Test.QuickCheck (Result(..), (<?>), (===))
+import Test.Assert as Assert
+import Test.QuickCheck (Result(..), unSeed, (<?>), (===))
+import Test.QuickCheck as LCG
+import Test.QuickCheck as QC
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (Gen, resize, suchThat)
-import Test.Unit (TestSuite, failure, success, suite, test)
-import Test.Unit.Assert as Assert
-import Test.Unit.Main (runTest)
-import Test.Unit.QuickCheck (quickCheck)
 
+type Test = ReaderT Int Effect Unit
+
+suite :: String -> Test -> Test
+suite = test
+
+test :: String -> Test -> Test
+test name run = do
+  indent <- ask
+  log (mkIndent indent <> name)
+  local (_ + 2) run
+
+mkIndent :: Int -> String
+mkIndent = power " "
+
+assertEqual :: forall a. Eq a => Show a => { actual :: a, expected :: a } -> Test
+assertEqual = liftEffect <<< Assert.assertEqual
+
+quickCheck :: forall prop. QC.Testable prop => prop -> Test
+quickCheck prop = liftEffect do
+  seed <- LCG.randomSeed
+  let summary = QC.checkResults (QC.quickCheckPure' seed 100 prop)
+  case List.head summary.failures of
+    Nothing -> pure unit
+    Just err -> throw $ "Property failed (seed " <> show (unSeed err.seed) <> ") failed: \n" <> err.message
+
+failure :: String -> Test
+failure = liftEffect <<< throw
 
 main :: Effect Unit
-main = runTest do
+main = flip runReaderT 0 do
   suite "Either Check" eitherCheck
   suite "Encode/Decode NonEmpty Check" nonEmptyCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
@@ -46,7 +78,7 @@ genTestRecord
        ))
 genTestRecord = arbitrary
 
-encodeDecodeRecordCheck :: TestSuite
+encodeDecodeRecordCheck :: Test
 encodeDecodeRecordCheck = do
   test "Testing that any record can be encoded and then decoded" do
     quickCheck rec_encode_then_decode
@@ -62,7 +94,7 @@ encodeDecodeRecordCheck = do
 genTestJson :: Gen Json
 genTestJson = resize 5 genJson
 
-encodeDecodeCheck :: TestSuite
+encodeDecodeCheck :: Test
 encodeDecodeCheck = do
   test "Testing that any JSON can be encoded and then decoded" do
     quickCheck prop_encode_then_decode
@@ -88,7 +120,7 @@ encodeDecodeCheck = do
 genObj :: Gen Json
 genObj = suchThat (resize 5 genJson) isObject
 
-combinatorsCheck :: TestSuite
+combinatorsCheck :: Test
 combinatorsCheck = do
   test "Check assoc builder `:=`" do
     quickCheck prop_assoc_builder_str
@@ -150,7 +182,7 @@ combinatorsCheck = do
       let keys = FO.keys object
       in foldl (\ok key -> ok && isJust (FO.lookup key object)) true keys
 
-eitherCheck :: TestSuite
+eitherCheck :: Test
 eitherCheck = do
   test "Test EncodeJson/DecodeJson Either test" do
     quickCheck \(x :: Either String String) ->
@@ -161,83 +193,83 @@ eitherCheck = do
         Left err ->
           false <?> err
 
-manualRecordDecode :: TestSuite
+manualRecordDecode :: Test
 manualRecordDecode = do
-  test "Test that decoding custom record is successful" do
+  test "Test that decoding custom record is pure unitful" do
     case decodeJson =<< jsonParser fooJson of
-      Right (Foo _) -> success
+      Right (Foo _) -> pure unit
       Left err -> failure err
   suite "Test decoding empty record" testEmptyCases
   suite "Test decoding missing 'bar' key" testBarCases
   suite "Test decoding missing 'baz' key" testBazCases
   suite "Test decoding with all fields present" testFullCases
   where
-  testEmptyCases :: TestSuite
+  testEmptyCases :: Test
   testEmptyCases = do
     test "Empty Json should decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedEmptyJson of
-        Right (FooNested { bar: Nothing, baz: false }) -> success
+        Right (FooNested { bar: Nothing, baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedEmptyJson)
     test "Json with null values should fail to decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedEmptyJsonNull of
         Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> fooNestedEmptyJsonNull)
-        _ -> success
+        _ -> pure unit
     test "Empty Json should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedEmptyJson of
-        Right (FooNested' { bar: Nothing, baz: false }) -> success
+        Right (FooNested' { bar: Nothing, baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedEmptyJson)
     test "Json with null values should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedEmptyJsonNull of
-        Right (FooNested' { bar: Nothing, baz: false }) -> success
+        Right (FooNested' { bar: Nothing, baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedEmptyJsonNull)
 
-  testBarCases :: TestSuite
+  testBarCases :: Test
   testBarCases = do
     test "Missing 'bar' key should decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedBazJson of
-        Right (FooNested { bar: Nothing, baz: true }) -> success
+        Right (FooNested { bar: Nothing, baz: true }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBazJson)
     test "Null 'bar' key should fail to decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedBazJsonNull of
         Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> fooNestedBazJsonNull)
-        _ -> success
+        _ -> pure unit
     test "Missing 'bar' key should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedBazJson of
-        Right (FooNested' { bar: Nothing, baz: true }) -> success
+        Right (FooNested' { bar: Nothing, baz: true }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBazJson)
     test "Null 'bar' key should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedBazJsonNull of
-        Right (FooNested' { bar: Nothing, baz: true }) -> success
+        Right (FooNested' { bar: Nothing, baz: true }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBazJsonNull)
 
-  testBazCases :: TestSuite
+  testBazCases :: Test
   testBazCases = do
     test "Missing 'baz' key should decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedBarJson of
-        Right (FooNested { bar: Just [1], baz: false }) -> success
+        Right (FooNested { bar: Just [1], baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBarJson)
     test "Null 'baz' key should fail to decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedBarJsonNull of
         Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> fooNestedBarJsonNull)
-        _ -> success
+        _ -> pure unit
     test "Missing 'baz' key should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedBarJson of
-        Right (FooNested' { bar: Just [1], baz: false }) -> success
+        Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBarJson)
     test "Null 'baz' key should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedBarJsonNull of
-        Right (FooNested' { bar: Just [1], baz: false }) -> success
+        Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedBarJsonNull)
 
-  testFullCases :: TestSuite
+  testFullCases :: Test
   testFullCases = do
     test "Json should decode to FooNested" do
       case decodeJson =<< jsonParser fooNestedFullJson of
-        Right (FooNested { bar: Just [1], baz: true }) -> success
+        Right (FooNested { bar: Just [1], baz: true }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedFullJson)
     test "Json should decode to FooNested'" do
       case decodeJson =<< jsonParser fooNestedFullJson of
-        Right (FooNested { bar: Just [1], baz: true }) -> success
+        Right (FooNested { bar: Just [1], baz: true }) -> pure unit
         _ -> failure ("Failed to properly decode JSON string: " <> fooNestedFullJson)
 
   fooJson :: String
@@ -264,7 +296,7 @@ manualRecordDecode = do
   fooNestedFullJson :: String
   fooNestedFullJson = """{ "bar": [1], "baz": true }"""
 
-nonEmptyCheck :: TestSuite
+nonEmptyCheck :: Test
 nonEmptyCheck = do
   test "Test EncodeJson/DecodeJson on NonEmpty Array" do
     quickCheck \(x :: NonEmpty Array String) ->
@@ -283,15 +315,15 @@ nonEmptyCheck = do
         Left err ->
           false <?> err
 
-errorMsgCheck :: TestSuite
+errorMsgCheck :: Test
 errorMsgCheck = do
   test "Test that decoding array fails with the proper message" do
     case notBar of
-      Left err -> Assert.equal barErr err
+      Left err -> assertEqual { expected: barErr, actual: err }
       _ -> failure "Should have failed to decode"
   test "Test that decoding record fails with the proper message" do
     case notBaz of
-      Left err -> Assert.equal bazErr err
+      Left err -> assertEqual { expected: bazErr, actual: err }
       _ -> failure "Should have failed to decode"
   where
   barErr :: String
