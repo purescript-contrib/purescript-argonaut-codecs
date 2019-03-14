@@ -6,6 +6,7 @@ import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJson
 import Data.Array as Arr
 import Data.Bifunctor (lmap, rmap)
 import Data.Either (Either(..), note)
+import Data.Identity (Identity(..))
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List as L
@@ -26,6 +27,9 @@ import Type.Data.RowList (RLProxy(..))
 
 class DecodeJson a where
   decodeJson :: Json -> Either String a
+
+instance decodeIdentity :: DecodeJson a => DecodeJson (Identity a) where
+  decodeJson j = Identity <$> decodeJson j
 
 instance decodeJsonMaybe :: DecodeJson a => DecodeJson (Maybe a) where
   decodeJson j

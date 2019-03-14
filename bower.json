@@ -29,7 +29,8 @@
     "purescript-foreign-object": "^2.0.0",
     "purescript-record": "^2.0.0",
     "purescript-nonempty": "^5.0.0",
-    "purescript-arrays": "^5.1.0"
+    "purescript-arrays": "^5.1.0",
+    "purescript-identity": "^4.1.0"
   },
   "devDependencies": {
     "purescript-assert": "^4.1.0",
