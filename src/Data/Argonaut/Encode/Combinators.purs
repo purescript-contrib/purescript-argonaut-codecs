@@ -4,8 +4,8 @@
 -- | myJson
 -- |  = "key1" := value1
 -- |  ~> "key2" :=? value2
--- | ~>? "key3" := value3
--- |  ~> jsonEmptyOibject
+-- |  ~>? "key3" := value3
+-- |  ~> jsonEmptyObject
 -- | ```
 module Data.Argonaut.Encode.Combinators where
 
