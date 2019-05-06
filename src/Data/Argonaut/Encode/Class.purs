@@ -119,4 +119,4 @@ instance gEncodeJsonCons
       FO.insert
         (reflectSymbol sProxy)
         (encodeJson $ Record.get sProxy row)
-        (gEncodeJson row $ RLProxy :: RLProxy tail)
+        (gEncodeJson row (RLProxy :: RLProxy tail))
