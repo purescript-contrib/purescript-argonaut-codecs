@@ -5,6 +5,7 @@ import Prelude
 import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
 import Data.Array as Arr
 import Data.Either (Either, either)
+import Data.Identity (Identity(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.List as L
@@ -25,6 +26,9 @@ import Type.Data.RowList (RLProxy(..))
 
 class EncodeJson a where
   encodeJson :: a -> Json
+
+instance encodeIdentity :: EncodeJson a => EncodeJson (Identity a) where
+  encodeJson (Identity a) = encodeJson a
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
   encodeJson Nothing  = jsonNull
