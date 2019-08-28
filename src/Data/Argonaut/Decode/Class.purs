@@ -4,12 +4,16 @@ import Prelude
 
 import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJsonNumber, caseJsonString, toArray, toObject, toString, stringify)
 import Data.Array as Arr
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap, rmap)
 import Data.Either (Either(..), note)
 import Data.Identity (Identity(..))
 import Data.Int (fromNumber)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List as L
+import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty as NEL
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.NonEmpty (NonEmpty, (:|))
@@ -63,10 +67,10 @@ instance decodeJsonNumber :: DecodeJson Number where
   decodeJson = caseJsonNumber (Left "Value is not a Number") Right
 
 instance decodeJsonInt :: DecodeJson Int where
-  decodeJson
-    = maybe (Left "Value is not an integer") Right
-    <<< fromNumber
-    <=< decodeJson
+  decodeJson = 
+    maybe (Left "Value is not an integer") Right
+      <<< fromNumber
+      <=< decodeJson
 
 instance decodeJsonString :: DecodeJson String where
   decodeJson = caseJsonString (Left "Value is not a String") Right
@@ -74,15 +78,25 @@ instance decodeJsonString :: DecodeJson String where
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
 
-instance decodeJsonNonEmptyArray :: (DecodeJson a) => DecodeJson (NonEmpty Array a) where
-  decodeJson
-    = lmap ("Couldn't decode NonEmpty Array: " <> _)
-    <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
+instance decodeJsonNonEmpty_Array :: (DecodeJson a) => DecodeJson (NonEmpty Array a) where
+  decodeJson = 
+    lmap ("Couldn't decode NonEmpty Array: " <> _)
+      <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
 
-instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmpty List a) where
-  decodeJson
-    = lmap ("Couldn't decode NonEmpty List: " <> _)
-    <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
+instance decodeJsonNonEmptyArray :: (DecodeJson a) => DecodeJson (NonEmptyArray a) where
+  decodeJson = 
+    lmap ("Couldn't decode NonEmptyArray: " <> _)
+      <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> NEA.cons' x.head x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
+
+instance decodeJsonNonEmpty_List :: (DecodeJson a) => DecodeJson (NonEmpty List a) where
+  decodeJson = 
+    lmap ("Couldn't decode NonEmpty List: " <> _)
+      <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
+
+instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmptyList a) where
+  decodeJson = 
+    lmap ("Couldn't decode NonEmptyList: " <> _)
+      <<< (traverse decodeJson <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> NEL.cons' x.head x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
 
 instance decodeJsonChar :: DecodeJson CodePoint where
   decodeJson j =
@@ -90,22 +104,22 @@ instance decodeJsonChar :: DecodeJson CodePoint where
       =<< codePointAt 0 <$> decodeJson j
 
 instance decodeForeignObject :: DecodeJson a => DecodeJson (FO.Object a) where
-  decodeJson
-    = lmap ("Couldn't decode ForeignObject: " <> _)
-    <<< (traverse decodeJson <=< decodeJObject)
+  decodeJson = 
+    lmap ("Couldn't decode ForeignObject: " <> _)
+      <<< (traverse decodeJson <=< decodeJObject)
 
 instance decodeArray :: DecodeJson a => DecodeJson (Array a) where
-  decodeJson
-    = lmap ("Couldn't decode Array (" <> _)
-    <<< (traverseWithIndex f <=< decodeJArray)
+  decodeJson = 
+    lmap ("Couldn't decode Array (" <> _) 
+      <<< (traverseWithIndex f <=< decodeJArray)
     where
-      msg i m = "Failed at index " <> show i <> "): " <> m
-      f i = lmap (msg i) <<< decodeJson
+    msg i m = "Failed at index " <> show i <> "): " <> m
+    f i = lmap (msg i) <<< decodeJson
 
 instance decodeList :: DecodeJson a => DecodeJson (List a) where
-  decodeJson
-    = lmap ("Couldn't decode List: " <> _)
-    <<< (traverse decodeJson <=< map (map fromFoldable) decodeJArray)
+  decodeJson = 
+    lmap ("Couldn't decode List: " <> _)
+      <<< (traverse decodeJson <=< map (map fromFoldable) decodeJArray)
 
 instance decodeSet :: (Ord a, DecodeJson a) => DecodeJson (S.Set a) where
   decodeJson = map (S.fromFoldable :: List a -> S.Set a) <<< decodeJson
@@ -127,7 +141,6 @@ instance decodeRecord
      , RL.RowToList row list
      )
   => DecodeJson (Record row) where
-
   decodeJson json =
     case toObject json of
       Just object -> gDecodeJson object (RLProxy :: RLProxy list)
@@ -147,12 +160,12 @@ instance gDecodeJsonCons
      , Row.Lacks field rowTail
      )
   => GDecodeJson row (RL.Cons field value tail) where
-
   gDecodeJson object _ = do
-    let sProxy :: SProxy field
-        sProxy = SProxy
+    let 
+      sProxy :: SProxy field
+      sProxy = SProxy
 
-        fieldName = reflectSymbol sProxy
+      fieldName = reflectSymbol sProxy
 
     rest <- gDecodeJson object (RLProxy :: RLProxy tail)
 

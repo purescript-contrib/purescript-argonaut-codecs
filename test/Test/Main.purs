@@ -9,11 +9,13 @@ import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:!), (.:?), (
 import Data.Argonaut.Encode (encodeJson, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Gen (genJson)
 import Data.Argonaut.Parser (jsonParser)
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Bifunctor (rmap)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.List (List)
 import Data.List as List
+import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
 import Data.Monoid (power)
 import Data.NonEmpty (NonEmpty)
@@ -69,27 +71,20 @@ main = flip runReaderT 0 do
   suite "Manual Combinators Checks" manualRecordDecode
   suite "Error Message Checks" errorMsgCheck
 
-
-genTestRecord
-  :: Gen (Record
-       ( i :: Int
-       , n :: Number
-       , s :: String
-       ))
+genTestRecord :: Gen { i :: Int, n :: Number, s :: String }
 genTestRecord = arbitrary
 
 encodeDecodeRecordCheck :: Test
 encodeDecodeRecordCheck = do
   test "Testing that any record can be encoded and then decoded" do
-    quickCheck rec_encode_then_decode
+    quickCheck recEncodeThenDecode
 
   where
-   rec_encode_then_decode :: Gen Result
-   rec_encode_then_decode = do
+  recEncodeThenDecode :: Gen Result
+  recEncodeThenDecode = do
     rec <- genTestRecord
     let redecoded = decodeJson (encodeJson rec)
     pure $ Right rec == redecoded <?> (show redecoded <> " /= Right " <> show rec)
-
 
 genTestJson :: Gen Json
 genTestJson = resize 5 genJson
@@ -97,21 +92,20 @@ genTestJson = resize 5 genJson
 encodeDecodeCheck :: Test
 encodeDecodeCheck = do
   test "Testing that any JSON can be encoded and then decoded" do
-    quickCheck prop_encode_then_decode
+    quickCheck propEncodeThenDecode
 
   test "Testing that any JSON can be decoded and then encoded" do
-    quickCheck prop_decode_then_encode
+    quickCheck propDecodeThenEncode
 
   where
-
-  prop_encode_then_decode :: Gen Result
-  prop_encode_then_decode = do
+  propEncodeThenDecode :: Gen Result
+  propEncodeThenDecode = do
     json <- genTestJson
     let redecoded = decodeJson (encodeJson json)
     pure $ Right json == redecoded <?> (show (rmap stringify redecoded) <> " /= Right " <> stringify json)
 
-  prop_decode_then_encode :: Gen Result
-  prop_decode_then_encode = do
+  propDecodeThenEncode :: Gen Result
+  propDecodeThenEncode = do
     json <- genTestJson
     let (decoded :: Either String Json) = decodeJson json
     let reencoded = decoded >>= (encodeJson >>> pure)
@@ -123,37 +117,35 @@ genObj = suchThat (resize 5 genJson) isObject
 combinatorsCheck :: Test
 combinatorsCheck = do
   test "Check assoc builder `:=`" do
-    quickCheck prop_assoc_builder_str
+    quickCheck propAssocBuilderStr
   test "Check assocOptional builder `:=?`" do
-    quickCheck prop_assoc_optional_builder_str
+    quickCheck propAssocOptionalBuilderStr
   test "Check JAssoc append `~>`" do
-    quickCheck prop_assoc_append
+    quickCheck propAssocAppend
   test "Check JAssoc appendOptional `~>?`" do
-    quickCheck prop_assoc_append_optional
+    quickCheck propAssocAppendOptional
   test "Check get field `obj .: 'foo'`" do -- this doesn't really test .:
-    quickCheck prop_get_jobject_field
-
+    quickCheck propGetJObjectField
   where
-
-  prop_assoc_builder_str :: Gen Result
-  prop_assoc_builder_str = do
+  propAssocBuilderStr :: Gen Result
+  propAssocBuilderStr = do
     key <- genUnicodeString
     str <- genUnicodeString
-    case (key := str) of
-      Tuple k json ->
-        pure $ Tuple key (decodeJson json) === Tuple k (Right str)
+    let Tuple k json = key := str
+    pure $ Tuple key (decodeJson json) === Tuple k (Right str)
 
-  prop_assoc_optional_builder_str :: Gen Result
-  prop_assoc_optional_builder_str = do
+  propAssocOptionalBuilderStr :: Gen Result
+  propAssocOptionalBuilderStr = do
     key <- genUnicodeString
     maybeStr <- genMaybe genUnicodeString
-    case (key :=? maybeStr) of
+    case key :=? maybeStr of
       Just (Tuple k json) ->
         pure $ Tuple key (decodeJson json) === Tuple k (Right maybeStr)
-      Nothing -> pure Success
+      Nothing -> 
+        pure Success
 
-  prop_assoc_append :: Gen Result
-  prop_assoc_append = do
+  propAssocAppend :: Gen Result
+  propAssocAppend = do
     key <- genUnicodeString
     val <- genTestJson
     obj <- genObj
@@ -162,8 +154,8 @@ combinatorsCheck = do
       Just value -> pure Success
       _ -> pure (Failed "failed to lookup key")
 
-  prop_assoc_append_optional :: Gen Result
-  prop_assoc_append_optional = do
+  propAssocAppendOptional :: Gen Result
+  propAssocAppendOptional = do
     key <- genUnicodeString
     maybeVal <- genMaybe genTestJson
     obj <- genObj
@@ -172,8 +164,8 @@ combinatorsCheck = do
       Just value -> isJust maybeVal === true
       _ -> isNothing maybeVal === true
 
-  prop_get_jobject_field :: Gen Result
-  prop_get_jobject_field = do
+  propGetJObjectField :: Gen Result
+  propGetJObjectField = do
     obj <- genObj
     pure (true === maybe false go (toObject obj))
     where
@@ -306,8 +298,24 @@ nonEmptyCheck = do
             <?> ("x = " <> show x <> ", decoded = " <> show decoded)
         Left err ->
           false <?> err
+  test "Test EncodeJson/DecodeJson on NonEmptyArray" do
+    quickCheck \(x :: NonEmptyArray String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
   test "Test EncodeJson/DecodeJson on NonEmpty List" do
     quickCheck \(x :: NonEmpty List String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> err
+  test "Test EncodeJson/DecodeJson on NonEmptyList" do
+    quickCheck \(x :: NonEmptyList String) ->
       case decodeJson (encodeJson x) of
         Right decoded ->
           decoded == x
