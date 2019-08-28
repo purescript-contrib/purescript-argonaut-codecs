@@ -4,11 +4,15 @@ import Prelude
 
 import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
 import Data.Array as Arr
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NEA
 import Data.Either (Either, either)
 import Data.Identity (Identity(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.List as L
+import Data.List.NonEmpty as NEL
+import Data.List.Types (NonEmptyList)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))
@@ -31,8 +35,9 @@ instance encodeIdentity :: EncodeJson a => EncodeJson (Identity a) where
   encodeJson (Identity a) = encodeJson a
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
-  encodeJson Nothing  = jsonNull
-  encodeJson (Just a) = encodeJson a
+  encodeJson = case _ of
+    Nothing -> jsonNull
+    Just a -> encodeJson a
 
 instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a b) where
   encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
@@ -42,8 +47,9 @@ instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either 
     where
     obj :: forall c. EncodeJson c => String -> c -> Json
     obj tag x =
-      fromObject $ FO.fromFoldable $
-        Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
+      fromObject 
+        $ FO.fromFoldable 
+        $ Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
 
 instance encodeJsonUnit :: EncodeJson Unit where
   encodeJson = const jsonNull
@@ -66,17 +72,23 @@ instance encodeJsonJson :: EncodeJson Json where
 instance encodeJsonCodePoint :: EncodeJson CodePoint where
   encodeJson = encodeJson <<< CP.singleton
 
-instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
-  encodeJson (NonEmpty h t) = encodeJson $ Arr.cons h t
+instance encodeJsonNonEmpty_Array :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
+  encodeJson (NonEmpty h t) = encodeJson (Arr.cons h t)
 
-instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
-  encodeJson (NonEmpty h t) = encodeJson $ L.insertAt 0 h t
+instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmptyArray a) where
+  encodeJson = encodeJson <<< NEA.toArray
+
+instance encodeJsonNonEmpty_List :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
+  encodeJson (NonEmpty h t) = encodeJson (L.insertAt 0 h t)
+
+instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmptyList a) where
+  encodeJson = encodeJson <<< NEL.toList
 
 instance encodeJsonChar :: EncodeJson Char where
   encodeJson = encodeJson <<< CU.singleton
 
 instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
-  encodeJson json = fromArray (encodeJson <$> json)
+  encodeJson = fromArray <<< map encodeJson
 
 instance encodeJsonList :: EncodeJson a => EncodeJson (List a) where
   encodeJson = fromArray <<< map encodeJson <<< toUnfoldable
@@ -98,7 +110,6 @@ instance encodeRecord
      , RL.RowToList row list
      )
   => EncodeJson (Record row) where
-
   encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
 
 class GEncodeJson (row :: # Type) (list :: RL.RowList) where
@@ -114,13 +125,9 @@ instance gEncodeJsonCons
      , Row.Cons field value tail' row
      )
   => GEncodeJson row (RL.Cons field value tail) where
-
-  gEncodeJson row _ =
-    let
-      sProxy :: SProxy field
-      sProxy = SProxy
-    in
-      FO.insert
-        (reflectSymbol sProxy)
-        (encodeJson $ Record.get sProxy row)
-        (gEncodeJson row (RLProxy :: RLProxy tail))
+  gEncodeJson row _ = do
+    let sProxy = SProxy :: SProxy field
+    FO.insert
+      (reflectSymbol sProxy)
+      (encodeJson $ Record.get sProxy row)
+      (gEncodeJson row (RLProxy :: RLProxy tail))
