@@ -6,7 +6,7 @@
 [![Maintainer: garyb](https://img.shields.io/badge/maintainer-garyb-lightgrey.svg)](http://github.com/garyb)
 [![Maintainer: thomashoneyman](https://img.shields.io/badge/maintainer-thomashoneyman-lightgrey.svg)](http://github.com/thomashoneyman)
 
-`argonaut-codecs` provides codecs based on the `EncodeJson` and `DecodeJson` type classes, along with instances for common data types and combinators for encoding and decoding `Json` values.
+Argonaut is a library for working with JSON in PureScript. `argonaut-codecs` provides codecs based on the `EncodeJson` and `DecodeJson` type classes, along with instances for common data types and combinators for encoding and decoding `Json` values.
 
 ## Installation
 
@@ -20,28 +20,23 @@ bower install purescript-argonaut-codecs
 
 ## Documentation
 
-Module documentation is [published on Pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs). 
+Module documentation is [published on Pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs).
 
 You may also be interested in other libraries in the Argonaut ecosystem:
 
-- [purescript-argonaut-core](https://github.com/purescript-contrib/purescript-argonaut-core) -- defines the `Json` type, along with basic parsing, printing, and folding functions which operate on it
+- [purescript-argonaut-core](https://github.com/purescript-contrib/purescript-argonaut-core) -- defines the `Json` type, along with basic parsing, printing, and folding functions
 - [purescript-argonaut-traversals](https://github.com/purescript-contrib/purescript-argonaut-traversals) -- defines prisms, traversals, and zippers for the `Json` type.
-
-- [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) -- supports generic encoding and decoding for any type with a `Generic` instance, which can be used to define instances of `EncodeJson` and `DecodeJson`.
-
-Codecs based on type classes are not always the appropriate approach for encoding and decoding JSON in your application. See [purescript-codec-argonaut](https://github.com/garyb/purescript-codec-argonaut) for an alternative, more explicit approach, which includes a comparison to this library.
+- [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) -- supports generic encoding and decoding for any type with a `Generic` instance
+- [purescript-codec-argonaut](https://github.com/garyb/purescript-codec-argonaut) -- an alternative approach for codecs, which are based on profunctors instead of type classes
 
 ## Quick Start
 
 Use `encodeJson` to encode PureScript data types as `Json` and `decodeJson` to decode `Json` into PureScript types, with helpful error messages if decoding fails.
 
 ```purs
-type User =
-  { name :: String 
-  , age :: Maybe Int 
-  }
+type User = { name :: String, age :: Maybe Int }
 
--- We get encoding and decoding for free because of the `EncodeJson` instances 
+-- We get encoding and decoding for free because of the `EncodeJson` instances
 -- for records, strings, integers, and `Maybe`, along with many other common
 -- PureScript types.
 
@@ -66,15 +61,9 @@ Right { name: "Tom", age: Just 25 }
 Left "JSON was missing expected field: age"
 ```
 
-This library provides helpful combinators for writing `EncodeJson` and `DecodeJson` instances for your own data types. See [the tutorial](#Tutorial) for a detailed walkthrough of this library.
-
 ## Tutorial
 
-Argonaut is a library for working with JSON in PureScript.
-
-The core `Json` data type and basic parsing, printing and folding functions are defined in the `argonaut-core` library, but these functions are low-level.
-
-This library, `argonaut-codecs`, provides type classes and combinators for convenient (and often automatic) encoding and decoding of `Json` for data types in your application, and includes instances for encoding and decoding most common PureScript types.
+This library provides provides type classes and combinators for convenient encoding and decoding of `Json` for data types in your application, and includes instances for encoding and decoding most common PureScript types.
 
 As a brief aside: this library works with `Json` values, not raw JSON strings.
 
@@ -83,29 +72,42 @@ As a brief aside: this library works with `Json` values, not raw JSON strings.
 
 #### Setup
 
-We recommend following along with this tutorial in the repl. Start a repl and import these modules -- later, we'll define some types to encode and decode.
+You can follow along with this tutorial in a repl. You should install these dependencies:
+
+```sh
+# with Spago
+spago install argonaut-codecs validation
+
+# with Bower
+bower install purescript-argonaut-codecs purescript-validation
+```
+
+Next, import the modules used in this tutorial -- you can also install `argonaut` and only import `Data.Argonaut` if you'd like to cut down on imports:
 
 ```
 import Prelude
 
-import Data.Argonaut
+import Control.Alternative
+import Data.Argonaut.Core
+import Data.Argonaut.Encode
+import Data.Argonaut.Decode
+import Data.Argonaut.Parser
 import Data.Maybe
 import Data.Either
+import Data.Validation.Semigroup
 ```
 
-> Tip: you can place this snippet in a `.purs-repl` file so the imports are loaded automatically when you run `pulp repl` or `spago repl`.
+> Tip: you can place this snippet in a `.purs-repl` file so the imports are loaded automatically when you run `spago repl` or `pulp repl`.
 
-### Automatic Encoding & Decoding 
+### Automatic Encoding & Decoding
 
-The `EncodeJson` and `DecodeJson` type classes let you rely on instances for common data types to automatically encode and decode `Json`.
-
-Let's explored automatic encoding and decoding using a type typical of PureScript applications as our example:
+The `EncodeJson` and `DecodeJson` type classes let you rely on instances for common data types to automatically encode and decode `Json`. Let's explore automatic encoding and decoding using a type typical of PureScript applications as our example:
 
 ```purs
 type User =
-  { name :: String 
+  { name :: String
   , age :: Maybe Int
-  , team :: Maybe String 
+  , team :: Maybe String
   }
 ```
 
@@ -113,13 +115,15 @@ type User =
 
 ##### Automatic encoding with `EncodeJson` and `encodeJson`
 
-Our `User` type is made up of several other types: `Record`, `Maybe`, `Int`, and `String`. Each of these types have instances for `EncodeJson`, which means that we can use the `encodeJson` function to transform them into `Json`:
+We can automatically encode `Json` using the `EncodeJson` type class ([pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs/docs/Data.Argonaut.Encode#t:EncodeJson)).
+
+Our `User` type is made up of several other types: `Record`, `Maybe`, `Int`, and `String`. Each of these types have instances for `EncodeJson`, which means that we can use the `encodeJson` function with them. Integers and strings will be encoded directly to `Json`, while container types like `Record` and `Maybe` will require on all of the types they contain to also have `EncodeJson` instances.
 
 ```purs
 encodeJson :: EncodeJson a => a -> Json
 ```
 
-> Tip: There is no `Show` instance for `Json`. To print a `Json` value as a valid JSON string, use `stringify` -- it's the same as the [JavaScript  `stringify` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify).
+> Tip: There is no `Show` instance for `Json`. To print a `Json` value as a valid JSON string, use `stringify` -- it's the same as the [JavaScript `stringify` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify).
 
 ```purs
 > user = { name: "Tom", age: Just 25, team: Just "Red Team" } :: User
@@ -129,7 +133,9 @@ encodeJson :: EncodeJson a => a -> Json
 
 ##### Automatic decoding with `DecodeJson` and `decodeJson`
 
-Every type within `User` has an instance for `DecodeJson`, which means we can use the `decodeJson` function to try to decode a `Json` value into our type:
+We can automatically decode `Json` using the `DecodeJson` type class ([pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs/docs/Data.Argonaut.Decode#t:DecodeJson)).
+
+Every type within `User` has an instance for `DecodeJson`, which means we can use the `decodeJson` function to try to decode a `Json` value into our type. Once again, integer and string values will be decoded directly from the `Json`, but containing types like `Record` and `Maybe` will also require instances for the types they contain.
 
 ```purs
 decodeJson :: DecodeJson a => Json -> Either String a
@@ -141,7 +147,7 @@ decodeJson :: DecodeJson a => Json -> Either String a
 > userJsonString = """{ "name": "Tom", "age": 25, "team": null }"""
 > decodedUser = decodeJson =<< jsonParser userJsonString
 
-# there is no `Show` instance for `Json`, so we'll stringify 
+# there is no `Show` instance for `Json`, so we'll stringify
 # the decoded result so it can be displayed in the repl
 > map stringify decodedUser
 Right "{\"name\":\"Tom\",\"age\":25,\"team\":null}"
@@ -170,7 +176,7 @@ Let's explore the combinators provided by `argonaut-codecs` for encoding and dec
 > Remember that you can write multi-line definitions using by typing :paste in the repl, and then using Ctrl+D to exit when you're done.
 
 ```purs
-newtype AppUser = AppUser 
+newtype AppUser = AppUser
   { name :: String
   , age :: Maybe Int
   , team :: Team
@@ -185,7 +191,7 @@ data Team
 
 To encode JSON, you must decide on a way to represent your data using only primitive JSON types (strings, numbers, booleans, arrays, objects, or null). Since PureScript's string, number, boolean, and array types already have `EncodeJson` instances, your responsibility is to find a way to transform your data types to those more primitive types so they can be encoded.
 
-Let's start with our `Team` type, which doesn't have an `EncodeJson` instance yet.  It can be represented in JSON by simple strings, so let's write a function to convert `Team` to a `String`:
+Let's start with our `Team` type, which doesn't have an `EncodeJson` instance yet. It can be represented in JSON by simple strings, so let's write a function to convert `Team` to a `String`:
 
 ```purs
 teamToString :: Team -> String
@@ -207,11 +213,11 @@ instance encodeJsonTeam :: EncodeJson Team where
   encodeJson team = encodeJson (teamToString team)
 ```
 
-If your type can be converted easily to a `String`, `Number`, or `Boolean`, then its `EncodeJson` instance will most likely look like the one we've written for `Team`. 
+If your type can be converted easily to a `String`, `Number`, or `Boolean`, then its `EncodeJson` instance will most likely look like the one we've written for `Team`.
 
 Most reasonably complex data types are best represented as objects, however. We can use combinators from `Data.Argonaut.Encode.Combinators` to conveniently encode `Json` objects manually. You'll provide `String` keys and values which can be encoded to `Json`.
 
-- Use `:=` (`assoc`) to encode a key/value pair where the key must exist; encoding the key `"team"` and value `Nothing ` will insert the key `"team"` with the value `null`.
+- Use `:=` (`assoc`) to encode a key/value pair where the key must exist; encoding the key `"team"` and value `Nothing` will insert the key `"team"` with the value `null`.
 - Use `~>` (`extend`) to provide more key/value pairs after using `:=`.
 - Use `:=?` (`assocOptional`) to encode a key/value pair where the key _may_ exist; encoding the key `"age"` and value `Nothing` will not insert the `"age"` key.
 - Use `~>?` (`extendOptional`) to provide more key/value pairs after using `:=?`.
@@ -220,7 +226,7 @@ Let's use these combinators to encode a `Json` object from our `AppUser` record.
 
 ```purs
 instance encodeJsonAppUser :: EncodeJson AppUser where
-  encodeJson (AppUser { name, age, team }) = 
+  encodeJson (AppUser { name, age, team }) =
     "name" := name       -- inserts "name": "Tom"
       ~> "age" :=? age   -- inserts "age": "25" (if Nothing, does not insert anything)
       ~>? "team" := team -- inserts "team": "Red Team"
@@ -268,12 +274,10 @@ If your type can be represented easily with a `String`, `Number`, `Boolean`, or 
 
 However, quite often your data type will require representation as an object. This library provides combinators in `Data.Argonaut.Decode.Combinators` which are useful for decoding objects into PureScript types by looking up keys in the object and decoding them according to their `DecodeJson` instances.
 
-- Use `.:` (`getField`) to decode a field where the value must exist
-- Use `.:?` (`getFieldOptional'`) to decode a field where the key may not exist, or the value may be `null`
-- Use `.:!` (`getFieldOptional`) to decode a field where the key may not exist. If the key exists, the value will be decoded -- even if it is `null`. This is rare; most of the time you want `.:?` instead.
-- Use `.!=` (`defaultField`) to provide a default value for a field which may not exist. If decoding fails, you'll still get an error; if decoding succeeds with a value of type  `Maybe a`, then this default value will handle the `Nothing` case.
+- Use `.:` (`getField`) to decode a field; if the field is missing, this will decode to a `Maybe`
+- Use `.=` (`defaultField`) to provide a default value for a field which may not exist. If decoding fails, you'll still get an error; if decoding succeeds with a value of type `Maybe a`, then this default value will handle the `Nothing` case.
 
-Let's use these combinators to decode a `Json` object into our `AppUser` record. 
+Let's use these combinators to decode a `Json` object into our `AppUser` record.
 
 The `decodeJson` function returns an `Either String a` value; `Either` is a monad, which means we can use convenient `do` syntax to write our decoder. If a step in decoding succeeds, then its result is passed to the next step. If any step in decoding fails, the entire computation will abort with the error it encountered.
 
@@ -282,8 +286,8 @@ instance decodeJsonAppUser :: DecodeJson AppUser where
   decodeJson json = do
     obj <- decodeJson json             -- decode `Json` to `Object Json`
     name <- obj .: "name"              -- decode the "name" key to a `String`
-    age <- obj .:? "age"               -- decode the "age" key to a `Maybe Int`
-    team <- obj .:? "team" .!= RedTeam -- decode "team" to `Team`, defaulting to `RedTeam`
+    age <- obj .: "age"                -- decode the "age" key to a `Maybe Int`
+    team <- obj .: "team" .!= RedTeam  -- decode "team" to `Team`, defaulting to `RedTeam`
                                        -- if the field is missing or `null`
     pure $ AppUser { name, age, team }
 ```
@@ -292,9 +296,11 @@ To recap: manually decoding your data type involves a few steps:
 
 1. Ensure that all types you are decoding have a `DecodeJson` instance
 
-2. Use `.:` to decode object fields which must exist, `.:?` for fields which may exist or may be null, and `.!=` to provide a default value for fields which may exist and are being decoded into a type which must exist.
+2. Use `.:` to decode object fields
 
-3. It's common to use the `Either` monad for convenience when writing decoders. Any failed decoding step will abort the entire computation with that error. See [Solving Common Problems](#solving-common-problems) for alternative approaches to decoding.
+3. Use `.!=` to provide a default value for fields which may exist in the `Json`, but must exist in the type you're decoding to (it's like `fromMaybe` for your ) d and are being decoded into a type which must exist.
+
+4. It's common to use the `Either` monad for convenience when writing decoders. Any failed decoding step will abort the entire computation with that error. See [Solving Common Problems](#solving-common-problems) for alternative approaches to decoding.
 
 #### Deriving Instances
 
@@ -370,9 +376,9 @@ instance decodeJsonUser :: DecodeJson User where
     uuid <- obj .: "uuid" <|> obj .: "uid" <|> ((_ .: "value") =<< obj .: "id")
 ```
 
-##### 2. Write multiple `encodeJson ` or `decodeJson` functions
+##### 2. Write multiple `encodeJson` or `decodeJson` functions
 
-Another option is to have a default representation for the type implemented as the type class instance, but alternative `decodeJson` and `encodeJson` functions which can be used directly. For example, consider the case in which our `User` data can be sent to multiple sources. One source requires the data to be formatted as an object, and another requires it to be formatted as a two-element array. 
+Another option is to have a default representation for the type implemented as the type class instance, but alternative `decodeJson` and `encodeJson` functions which can be used directly. For example, consider the case in which our `User` data can be sent to multiple sources. One source requires the data to be formatted as an object, and another requires it to be formatted as a two-element array.
 
 In this case, our type class instance can use the default object encoding, and we can supply a separate `encodeJsonAsArray` function for use when required.
 
@@ -389,13 +395,13 @@ encodeUserAsArray user = encodeJson [ user.uuid, user.name ]
 You may occasionally be unable to write `EncodeJson` or `DecodeJson` instances for a data type because it requires more information than just `Json` as its argument. For instance, consider this pair of types:
 
 ```purs
-data Author 
+data Author
   = Following String    -- you are subscribed to this author
   | NotFollowing String -- you aren't subscribed to this author
   | You                 -- you are the author
 
 type BlogPost =
-  { title :: String 
+  { title :: String
   , author :: Author
   }
 ```
@@ -417,7 +423,7 @@ decodeJsonAuthor maybeUsername json = do
     Just (Username username) | author == username -> You
     -- user is not the author, or no one is logged in, so use the `following` flag
     otherwise -> author # if following then Following else NotFollowing
-    
+
 decodeJsonBlogPost :: Maybe Username -> Json -> Either String BlogPost
 decodeJsonBlogPost username json = do
   obj <- decodeJson json
@@ -444,10 +450,10 @@ instance decodeJsonPreciseDateTime :: DecodeJson PreciseDateTime where
   decodeJson json = fromString =<< decodeJson json
     where
     fromString :: String -> Either String PreciseDateTime
-    fromString = 
+    fromString =
       map PreciseDateTime
-        <<< note "Could not parse RFC3339 string" 
-        <<< PDT.fromRFC3339String 
+        <<< note "Could not parse RFC3339 string"
+        <<< PDT.fromRFC3339String
         <<< RFC3339String
 ```
 
@@ -461,7 +467,7 @@ For example, let's say we have a `User` type which occasionally gets bad input, 
 
 ```purs
 newtype User = User
-  { name :: String 
+  { name :: String
   , age :: Maybe Int
   , location :: String
   }
@@ -469,7 +475,7 @@ newtype User = User
 derive instance newtypeUser :: Newtype User _
 derive newtype instance showUser :: Show User
 
-decodeUser :: Json -> Either (Array String) User 
+decodeUser :: Json -> Either (Array String) User
 decodeUser json = do
   obj <- decodeJson json
   name <- obj .: "name"
@@ -494,7 +500,7 @@ decodeJsonV = either (invalid <<< pure) pure <<< decodeJson
 
 -- a replacement for `getField`
 getFieldV :: forall a. DecodeJson a => Object Json -> String -> V (Array String) a
-getFieldV object key = 
+getFieldV object key =
   either (invalid <<< pure) pure (object .: key)
 
 -- a replacement for .:
@@ -504,7 +510,7 @@ infix 7 getFieldV as .:|
 With this new operator and applicative-do we can recreate our original decoder, except with accumulating errors this time:
 
 ```purs
-decodeUser :: Json -> Either (Array String) User 
+decodeUser :: Json -> Either (Array String) User
 decodeUser json = do
   user <- toEither $ V.andThen (decodeJsonV json) \obj -> ado
     name <- obj .:| "name"
@@ -519,7 +525,7 @@ This decoder will now print all errors:
 ```purs
 > import Data.Bifunctor (lmap)
 > decodeUser =<< lmap pure (jsonParser "{}")
-Left 
+Left
   [ "Expected field \"name\""
   , "Expected field \"age\""
   , "Expected field \"location\""
