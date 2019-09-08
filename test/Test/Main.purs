@@ -2,10 +2,11 @@ module Test.Main where
 
 import Prelude
 
+import Control.Alternative ((<|>))
 import Control.Monad.Gen.Common (genMaybe)
 import Control.Monad.Reader (ReaderT, ask, local, runReaderT)
 import Data.Argonaut.Core (Json, isObject, stringify, toObject)
-import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:!), (.:?), (.!=))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson, (.:), (.:!), (.!=))
 import Data.Argonaut.Encode (encodeJson, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Gen (genJson)
 import Data.Argonaut.Parser (jsonParser)
@@ -371,8 +372,8 @@ newtype FooNested = FooNested
 instance decodeJsonFooNested :: DecodeJson FooNested where
   decodeJson json = do
     x <- decodeJson json
-    bar <- x .:! "bar"
-    baz <- x .:! "baz" .!= false
+    bar <- x .: "bar"
+    baz <- x .: "baz" <|> pure false
     pure $ FooNested { bar, baz }
 
 newtype FooNested' = FooNested'
@@ -383,6 +384,6 @@ newtype FooNested' = FooNested'
 instance decodeJsonFooNested' :: DecodeJson FooNested' where
   decodeJson json = do
     x <- decodeJson json
-    bar <- x .:? "bar"
-    baz <- x .:? "baz" .!= false
+    bar <- x .:! "bar"
+    baz <- x .:! "baz" .!= false
     pure $ FooNested' { bar, baz }
