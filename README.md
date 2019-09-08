@@ -49,7 +49,7 @@ userFromJson = decodeJson
 
 In a REPL we can see these functions in action:
 
-```purs
+```sh
 > user = { name: "Tom", age: Just 25 }
 > stringify (encodeJson user)
 "{\"name\":\"Tom\",\"age\":25}"
@@ -84,7 +84,7 @@ bower install purescript-argonaut-codecs purescript-validation
 
 Next, import the modules used in this tutorial -- you can also install `argonaut` and only import `Data.Argonaut` if you'd like to cut down on imports:
 
-```
+```purs
 import Prelude
 
 import Control.Alternative
@@ -125,7 +125,7 @@ encodeJson :: EncodeJson a => a -> Json
 
 > Tip: There is no `Show` instance for `Json`. To print a `Json` value as a valid JSON string, use `stringify` -- it's the same as the [JavaScript `stringify` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify).
 
-```purs
+```sh
 > user = { name: "Tom", age: Just 25, team: Just "Red Team" } :: User
 > stringify (encodeJson user)
 "{\"name\":\"Tom\",\"age\":25,\"team\":\"Red Team\"}"
@@ -143,7 +143,7 @@ decodeJson :: DecodeJson a => Json -> Either String a
 
 > Tip: To parse a JSON string as a `Json` value, you can use the `jsonParser` function (which can fail). If you are sure you have valid JSON, then consider writing it in an FFI file and foreign importing it as `Json` as described in the [`argonaut-core` documentation](https://github.com/purescript-contrib/purescript-argonaut-core#introducing-json-values).
 
-```purs
+```sh
 > userJsonString = """{ "name": "Tom", "age": 25, "team": null }"""
 > decodedUser = decodeJson =<< jsonParser userJsonString
 
@@ -155,7 +155,7 @@ Right "{\"name\":\"Tom\",\"age\":25,\"team\":null}"
 
 Decoding can fail if the `Json` doesn't match the shape expected by a `DecodeJson` instance; in that case, an error is returned instead of the decoded value.
 
-```
+```sh
 > badUserJsonString = """{ "name": "Tom", "age": null }
 > (decodeJson =<< jsonParser badUserJsonString) :: Either String User
 Left "JSON was missing expected field: team"
@@ -275,7 +275,7 @@ If your type can be represented easily with a `String`, `Number`, `Boolean`, or 
 However, quite often your data type will require representation as an object. This library provides combinators in `Data.Argonaut.Decode.Combinators` which are useful for decoding objects into PureScript types by looking up keys in the object and decoding them according to their `DecodeJson` instances.
 
 - Use `.:` (`getField`) to decode a field; if the field is missing, this will decode to a `Maybe`
-- Use `.=` (`defaultField`) to provide a default value for a field which may not exist. If decoding fails, you'll still get an error; if decoding succeeds with a value of type `Maybe a`, then this default value will handle the `Nothing` case.
+- Use `.!=` (`defaultField`) to provide a default value for a field which may not exist. If decoding fails, you'll still get an error; if decoding succeeds with a value of type `Maybe a`, then this default value will handle the `Nothing` case.
 
 Let's use these combinators to decode a `Json` object into our `AppUser` record.
 
@@ -475,7 +475,7 @@ newtype User = User
 derive instance newtypeUser :: Newtype User _
 derive newtype instance showUser :: Show User
 
-decodeUser :: Json -> Either (Array String) User
+decodeUser :: Json -> Either String User
 decodeUser json = do
   obj <- decodeJson json
   name <- obj .: "name"
@@ -486,7 +486,7 @@ decodeUser json = do
 
 Running this in the REPL with bad input, we only see the first error:
 
-```purs
+```sh
 > decodeUser =<< jsonParser "{}"
 Left "Expected field \"name\""
 ```
@@ -517,7 +517,7 @@ decodeUser json = do
     age <- obj .:| "age"
     location <- obj .:| "location"
     in { name, age, location }
-  pure (User user)
+  pure $ User user
 ```
 
 This decoder will now print all errors:
