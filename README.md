@@ -24,10 +24,10 @@ Module documentation is [published on Pursuit](https://pursuit.purescript.org/pa
 
 You may also be interested in other libraries in the Argonaut ecosystem:
 
-- [purescript-argonaut-core](https://github.com/purescript-contrib/purescript-argonaut-core) -- defines the `Json` type, along with basic parsing, printing, and folding functions
-- [purescript-argonaut-traversals](https://github.com/purescript-contrib/purescript-argonaut-traversals) -- defines prisms, traversals, and zippers for the `Json` type.
-- [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) -- supports generic encoding and decoding for any type with a `Generic` instance
-- [purescript-codec-argonaut](https://github.com/garyb/purescript-codec-argonaut) -- an alternative approach for codecs, which are based on profunctors instead of type classes
+- [purescript-argonaut-core](https://github.com/purescript-contrib/purescript-argonaut-core) defines the `Json` type, along with basic parsing, printing, and folding functions
+- [purescript-argonaut-traversals](https://github.com/purescript-contrib/purescript-argonaut-traversals) defines prisms, traversals, and zippers for the `Json` type.
+- [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) supports generic encoding and decoding for any type with a `Generic` instance
+- [purescript-codec-argonaut](https://github.com/garyb/purescript-codec-argonaut) supports an alternative approach for codecs, which are based on profunctors instead of type classes
 
 ## Quick Start
 
