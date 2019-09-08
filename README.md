@@ -298,7 +298,7 @@ To recap: manually decoding your data type involves a few steps:
 
 2. Use `.:` to decode object fields
 
-3. Use `.!=` to provide a default value for fields which may exist in the `Json`, but must exist in the type you're decoding to (it's like `fromMaybe` for your ) d and are being decoded into a type which must exist.
+3. Use `.!=` to provide a default value for fields which may exist in the `Json`, but must exist in the type you're decoding to (it's like `fromMaybe` for your decoder, unwrapping the decoded value).
 
 4. It's common to use the `Either` monad for convenience when writing decoders. Any failed decoding step will abort the entire computation with that error. See [Solving Common Problems](#solving-common-problems) for alternative approaches to decoding.
 
