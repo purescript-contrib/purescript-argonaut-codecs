@@ -265,9 +265,10 @@ Let's write the instance using `note` from `purescript-either`:
 
 ```purs
 instance decodeJsonTeam :: DecodeJson Team where
-  decodeJson string = do
+  decodeJson json = do
+    string <- decodeJson json
     let decodeError = "Could not decode Team from " <> string
-    decodeJson (note decodeError teamFromString string)
+    note decodeError (teamFromString string)
 ```
 
 If your type can be represented easily with a `String`, `Number`, `Boolean`, or array of one of these types, then its `DecodeJson` will most likely look similar to this one.
