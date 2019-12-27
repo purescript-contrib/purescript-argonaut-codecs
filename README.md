@@ -315,7 +315,7 @@ In that case, we can use newtype deriving to get `EncodeJson` and `DecodeJson` f
 ```purs
 newtype AppUser = AppUser { name :: String, age :: Maybe Int, team :: Team }
 
-instance newtypeAppUser :: Newtype AppUser _
+derive instance newtypeAppUser :: Newtype AppUser _
 
 derive newtype instance encodeJsonAppUser :: EncodeJson AppUser
 derive newtype instance decodeJsonAppUser :: DecodeJson AppUser
