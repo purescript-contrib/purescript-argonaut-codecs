@@ -146,7 +146,7 @@ instance decodeRecord
       Just object -> gDecodeJson object (RLProxy :: RLProxy list)
       Nothing     -> Left "Could not convert JSON to object"
 
-class GDecodeJson (row :: # Type) (list :: RL.RowList) | list -> row where
+class GDecodeJson (row :: Row Type) (list :: RL.RowList Type) | list -> row where
   gDecodeJson :: FO.Object Json -> RLProxy list -> Either String (Record row)
 
 instance gDecodeJsonNil :: GDecodeJson () RL.Nil where

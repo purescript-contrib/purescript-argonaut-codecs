@@ -112,7 +112,7 @@ instance encodeRecord
   => EncodeJson (Record row) where
   encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
 
-class GEncodeJson (row :: # Type) (list :: RL.RowList) where
+class GEncodeJson (row :: Row Type) (list :: RL.RowList Type) where
   gEncodeJson :: Record row -> RLProxy list -> FO.Object Json
 
 instance gEncodeJsonNil :: GEncodeJson row RL.Nil where
