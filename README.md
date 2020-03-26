@@ -156,7 +156,7 @@ Right "{\"name\":\"Tom\",\"age\":25,\"team\":null}"
 Decoding can fail if the `Json` doesn't match the shape expected by a `DecodeJson` instance; in that case, an error is returned instead of the decoded value.
 
 ```
-> badUserJsonString = """{ "name": "Tom", "age": null }
+> badUserJsonString = """{ "name": "Tom", "age": null }"""
 > (decodeJson =<< jsonParser badUserJsonString) :: Either String User
 Left "JSON was missing expected field: team"
 ```
