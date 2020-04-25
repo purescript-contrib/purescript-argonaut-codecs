@@ -323,7 +323,7 @@ derive newtype instance decodeJsonAppUser :: DecodeJson AppUser
 
 ##### Generics
 
-If your data type has an instance of `Generic`, then you can use [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) to leverage `gEncodeJson` and `gDecodeJson` to write your instances:
+If your data type has an instance of `Generic`, then you can use [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) to leverage `genericEncodeJson` and `genericDecodeJson` to write your instances:
 
 ```purs
 import Data.Generic.Rep (class Generic)
