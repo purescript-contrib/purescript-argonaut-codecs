@@ -326,15 +326,19 @@ derive newtype instance decodeJsonAppUser :: DecodeJson AppUser
 If your data type has an instance of `Generic`, then you can use [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) to leverage `gEncodeJson` and `gDecodeJson` to write your instances:
 
 ```purs
+import Data.Generic.Rep (class Generic)
+import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson)
+import Data.Argonaut.Decode.Generic.Rep (genericDecodeJson)
+
 data Team = RedTeam | BlueTeam
 
 derive instance genericTeam :: Generic Team _
 
 instance encodeJsonTeam :: EncodeJson Team where
-  encodeJson = gEncodeJson
+  encodeJson = genericEncodeJson
 
 instance decodeJsonTeam :: DecodeJson Team where
-  decodeJson = gDecodeJson
+  decodeJson = genericDecodeJson
 ```
 
 ### Solving Common Problems
