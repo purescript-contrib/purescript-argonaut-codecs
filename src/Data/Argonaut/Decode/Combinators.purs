@@ -18,8 +18,7 @@ module Data.Argonaut.Decode.Combinators
 import Prelude
 
 import Data.Argonaut.Core (Json, isNull)
-import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
-import Data.Bifunctor (lmap)
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson, elaborateFailure)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Foreign.Object as FO
@@ -128,9 +127,3 @@ defaultFieldDeprecated
 defaultFieldDeprecated = defaultField
 
 infix 6 defaultFieldDeprecated as .?=
-
-elaborateFailure :: ∀ a. String -> Either String a -> Either String a
-elaborateFailure s e =
-  lmap msg e
-  where
-    msg m = "Failed to decode key '" <> s <> "': " <> m
