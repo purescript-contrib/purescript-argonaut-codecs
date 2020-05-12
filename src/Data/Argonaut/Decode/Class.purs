@@ -2,6 +2,7 @@ module Data.Argonaut.Decode.Class where
 
 import Prelude
 
+import Control.Apply (lift2)
 import Data.Argonaut.Core (Json, isNull, caseJsonNull, caseJsonBoolean, caseJsonNumber, caseJsonString, toArray, toObject, toString, stringify)
 import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -41,10 +42,11 @@ instance decodeJsonMaybe :: DecodeJson a => DecodeJson (Maybe a) where
     | otherwise = Just <$> decodeJson j
 
 instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a b) where
-  decodeJson j = decodeJson j >>= f
-    where
-    f [a, b] = Tuple <$> decodeJson a <*> decodeJson b
-    f _ = Left "Couldn't decode Tuple"
+  decodeJson j = do
+    decoded <- decodeJson j
+    case decoded of
+      [a, b] -> lift2 Tuple (decodeJson a) (decodeJson b)
+      _ -> Left "Couldn't decode Tuple"
 
 instance decodeJsonEither :: (DecodeJson a, DecodeJson b) => DecodeJson (Either a b) where
   decodeJson json =
