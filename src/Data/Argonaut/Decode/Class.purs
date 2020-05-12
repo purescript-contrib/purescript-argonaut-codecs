@@ -10,7 +10,7 @@ import Data.Bifunctor (lmap, rmap)
 import Data.Either (Either(..), note)
 import Data.Identity (Identity(..))
 import Data.Int (fromNumber)
-import Data.List (List(..), (:), fromFoldable)
+import Data.List (List, fromFoldable)
 import Data.List as L
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty as NEL
@@ -43,7 +43,7 @@ instance decodeJsonMaybe :: DecodeJson a => DecodeJson (Maybe a) where
 instance decodeJsonTuple :: (DecodeJson a, DecodeJson b) => DecodeJson (Tuple a b) where
   decodeJson j = decodeJson j >>= f
     where
-    f (a : b : Nil) = Tuple <$> decodeJson a <*> decodeJson b
+    f [a, b] = Tuple <$> decodeJson a <*> decodeJson b
     f _ = Left "Couldn't decode Tuple"
 
 instance decodeJsonEither :: (DecodeJson a, DecodeJson b) => DecodeJson (Either a b) where
