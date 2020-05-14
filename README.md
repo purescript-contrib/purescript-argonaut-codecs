@@ -341,6 +341,26 @@ instance decodeJsonTeam :: DecodeJson Team where
   decodeJson = genericDecodeJson
 ```
 
+Here is another example of how to derive a generic instance of a type with a type variable. This type also happens to be recursive:
+```purs
+data Chain a
+  = End a
+  | Link a (Chain a)
+
+derive instance genericChain :: Generic (Chain a) _
+
+instance encodeJsonChain :: EncodeJson a => EncodeJson (Chain a) where
+  encodeJson c = genericEncodeJson c
+
+instance decodeJsonChain :: DecodeJson a => DecodeJson (Chain a) where
+  decodeJson c = genericDecodeJson c
+```
+
+Note the addition of instance dependencies for the type variable `a`.
+Also note that these instances for a recursive type cannot be written in point-free style, as that would likely cause a stack overflow during execution. Instead, we use the variables `c` to apply eta-expansion.
+
+More information about how to derive generic instances can be found in this [21-days-of-purescript post](https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown#deriving-generic-instances).
+
 ### Solving Common Problems
 
 #### Handling Multiple JSON Representations
@@ -440,7 +460,7 @@ decodeJsonBlogPost username json = do
 
 While not an issue specific to `argonaut-codecs`, you may sometimes wish to write an `EncodeJson` or a `DecodeJson` instance for a data type you did not define -- for instance, the `PreciseDateTime` type from `purescript-precise-datetime`. This type has no instances because there are many ways you might wish to represent it in JSON.
 
-If you want to use an application-specific encoding for this type then you will need to define a newtype wrapper for it and define instances for that new type instead.
+If you want to use an application-specific encoding for this type then you will need to define a newtype wrapper for it and define instances for that new type instead. You cannot simply write an instance for the original `PreciseDateTime` type as that would be creating an orphan instance.
 
 ```purs
 module App.Data.PreciseDateTime where
