@@ -359,7 +359,7 @@ instance decodeJsonChain :: DecodeJson a => DecodeJson (Chain a) where
 Note the addition of instance dependencies for the type variable `a`.
 Also note that these instances for a recursive type cannot be written in point-free style, as that would likely cause a stack overflow during execution. Instead, we use the variables `c` to apply eta-expansion.
 
-More information about how to derive generic instances can be found in this [21-days-of-purescript post](https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown#deriving-generic-instances).
+More information about how to derive generic instances can be found in this [24-days-of-purescript post](https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown#deriving-generic-instances).
 
 ### Solving Common Problems
 
