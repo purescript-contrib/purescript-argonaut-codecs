@@ -10,7 +10,7 @@ import Data.Bifunctor (lmap, rmap)
 import Data.Either (Either(..), note)
 import Data.Identity (Identity(..))
 import Data.Int (fromNumber)
-import Data.List (List(..), (:), fromFoldable)
+import Data.List (List, fromFoldable)
 import Data.List as L
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty as NEL

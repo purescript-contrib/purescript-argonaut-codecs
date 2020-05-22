@@ -2,9 +2,8 @@ module Data.Argonaut.Decode.Class where
 
 import Prelude (class Ord, Unit, Void, bind, ($), (<<<), (<>))
 
-import Data.Argonaut.Core (Json, fromString, toObject)
+import Data.Argonaut.Core (Json, toObject)
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List)
