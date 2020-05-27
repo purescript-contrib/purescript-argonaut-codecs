@@ -14,37 +14,37 @@ import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
 import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
-import Data.Argonaut.Encode.Implementation as Implementation
+import Data.Argonaut.Encode.Encoders as Encoders
 
 -- | Creates a `Tuple String Json` entry, representing a key/value pair for an object.
 infix 7 assoc as :=
 
--- | The named implementation of the `(:=)` operator.
+-- | The named Encoders of the `(:=)` operator.
 assoc :: forall a. EncodeJson a => String -> a -> Tuple String Json
-assoc = Implementation.assoc encodeJson
+assoc = Encoders.assoc encodeJson
 
 -- | Creates an optional `Tuple String Json` entry, representing an optional key/value pair for an object.
 infix 7 assocOptional as :=?
 
--- | The named implementation of the `(:=?)` operator.
+-- | The named Encoders of the `(:=?)` operator.
 assocOptional
   :: forall a
    . EncodeJson a
   => String
   -> Maybe a
   -> Maybe (Tuple String Json)
-assocOptional = Implementation.assocOptional encodeJson
+assocOptional = Encoders.assocOptional encodeJson
 
 -- | Extends a Json object with a `Tuple String Json` property.
 infixr 6 extend as ~>
 
--- | The named implementation of the `(~>)` operator.
+-- | The named Encoders of the `(~>)` operator.
 extend :: forall a. EncodeJson a => Tuple String Json -> a -> Json
-extend = Implementation.extend encodeJson
+extend = Encoders.extend encodeJson
 
 -- | Optionally extends a Json object with an optional `Tuple String Json` property.
 infixr 6 extendOptional as ~>?
 
--- | The named implementation of the `(~>?)` operator.
+-- | The named Encoders of the `(~>?)` operator.
 extendOptional :: forall a. EncodeJson a => Maybe (Tuple String Json) -> a -> Json
-extendOptional = Implementation.extendOptional encodeJson
+extendOptional = Encoders.extendOptional encodeJson

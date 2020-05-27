@@ -23,14 +23,14 @@ import Data.Either (Either)
 import Data.Maybe (Maybe, fromMaybe)
 import Foreign.Object as FO
 import Prim.TypeError (class Warn, Text)
-import Data.Argonaut.Decode.Implementation as Implementation
+import Data.Argonaut.Decode.Decoders as Decoders
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
 -- | Use this accessor if the key and value *must* be present in your object.
 -- | If the key and value are optional, use `getFieldOptional'` (`.:?`) instead.
 getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
-getField = Implementation.getField decodeJson
+getField = Decoders.getField decodeJson
 
 infix 7 getField as .:
 
@@ -52,7 +52,7 @@ infix 7 getFieldDeprecated as .?
 -- | Use this accessor if the key and value are optional in your object.
 -- | If the key and value are mandatory, use `getField` (`.:`) instead.
 getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional' = Implementation.getFieldOptional' decodeJson
+getFieldOptional' = Decoders.getFieldOptional' decodeJson
 
 infix 7 getFieldOptional' as .:?
 
@@ -65,7 +65,7 @@ infix 7 getFieldOptional' as .:?
 -- | If you would like to treat `null` values the same as absent values, use
 -- | `getFieldOptional'` (`.:?`) instead.
 getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional = Implementation.getFieldOptional decodeJson
+getFieldOptional = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptional as .:!
 
@@ -75,7 +75,7 @@ getFieldOptionalDeprecated
   => FO.Object Json
   -> String
   -> Either String (Maybe a)
-getFieldOptionalDeprecated = Implementation.getFieldOptional decodeJson
+getFieldOptionalDeprecated = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptionalDeprecated as .??
 

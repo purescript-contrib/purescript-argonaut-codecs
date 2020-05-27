@@ -1,4 +1,4 @@
-module Data.Argonaut.Encode.Implementation where
+module Data.Argonaut.Encode.Encoders where
 
 import Prelude
 
@@ -116,7 +116,7 @@ extend encoder (Tuple k v) =
     (FO.insert k v >>> fromObject)
     <<< encoder
 
--- | The named implementation of the `(~>?)` operator.
+-- | The named Encoders of the `(~>?)` operator.
 extendOptional :: forall a. Encoder a -> Maybe (Tuple String Json) -> a -> Json
 extendOptional encoder (Just kv) = extend encoder kv
 extendOptional encoder Nothing = encoder

@@ -1,4 +1,4 @@
-module Data.Argonaut.Decode.Implementation where
+module Data.Argonaut.Decode.Decoders where
 
 import Prelude
 

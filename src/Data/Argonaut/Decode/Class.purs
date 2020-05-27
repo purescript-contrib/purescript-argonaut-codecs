@@ -20,7 +20,7 @@ import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
 import Type.Data.RowList (RLProxy(..))
-import Data.Argonaut.Decode.Implementation
+import Data.Argonaut.Decode.Decoders
 
 class DecodeJson a where
   decodeJson :: Decoder a
