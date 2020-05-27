@@ -27,16 +27,16 @@ type Encoder a = a -> Json
 encodeIdentity :: forall a . Encoder a -> Encoder (Identity a)
 encodeIdentity encoder (Identity a) = encoder a
 
-encodeJsonMaybe :: forall a . Encoder a -> Encoder (Maybe a)
-encodeJsonMaybe encoder = case _ of
+encodeMaybe :: forall a . Encoder a -> Encoder (Maybe a)
+encodeMaybe encoder = case _ of
     Nothing -> jsonNull
     Just a -> encoder a
 
-encodeJsonTuple :: forall a b . Encoder a -> Encoder b -> Encoder (Tuple a b)
-encodeJsonTuple encoderA encoderB (Tuple a b) = fromArray [encoderA a, encoderB b]
+encodeTuple :: forall a b . Encoder a -> Encoder b -> Encoder (Tuple a b)
+encodeTuple encoderA encoderB (Tuple a b) = fromArray [encoderA a, encoderB b]
 
-encodeJsonEither :: forall a b . Encoder a -> Encoder b -> Encoder (Either a b)
-encodeJsonEither encoderA encoderB = either (obj encoderA "Left") (obj encoderB "Right")
+encodeEither :: forall a b . Encoder a -> Encoder b -> Encoder (Either a b)
+encodeEither encoderA encoderB = either (obj encoderA "Left") (obj encoderB "Right")
     where
     obj :: forall c. Encoder c -> String -> c -> Json
     obj encoder tag x =
@@ -44,56 +44,53 @@ encodeJsonEither encoderA encoderB = either (obj encoderA "Left") (obj encoderB 
         $ FO.fromFoldable
         $ Tuple "tag" (fromString tag) : Tuple "value" (encoder x) : Nil
 
-encodeJsonUnit :: Encoder Unit
-encodeJsonUnit = const jsonNull
+encodeUnit :: Encoder Unit
+encodeUnit = const jsonNull
 
-encodeJsonJBoolean :: Encoder Boolean
-encodeJsonJBoolean = fromBoolean
+encodeBoolean :: Encoder Boolean
+encodeBoolean = fromBoolean
 
-encodeJsonJNumber :: Encoder Number
-encodeJsonJNumber = fromNumber
+encodeNumber :: Encoder Number
+encodeNumber = fromNumber
 
-encodeJsonInt :: Encoder Int
-encodeJsonInt = fromNumber <<< toNumber
+encodeInt :: Encoder Int
+encodeInt = fromNumber <<< toNumber
 
-encodeJsonJString :: Encoder String
-encodeJsonJString = fromString
+encodeString :: Encoder String
+encodeString = fromString
 
-encodeJsonJson :: Encoder Json
-encodeJsonJson = identity
+encodeCodePoint :: Encoder CodePoint
+encodeCodePoint = encodeString <<< CP.singleton
 
-encodeJsonCodePoint :: Encoder CodePoint
-encodeJsonCodePoint = encodeJsonJString <<< CP.singleton
+encodeNonEmpty_Array :: forall a . (Encoder a) -> Encoder (NonEmpty Array a)
+encodeNonEmpty_Array encoder (NonEmpty h t) = encodeArray encoder (Arr.cons h t)
 
-encodeJsonNonEmpty_Array :: forall a . (Encoder a) -> Encoder (NonEmpty Array a)
-encodeJsonNonEmpty_Array encoder (NonEmpty h t) = encodeJsonArray encoder (Arr.cons h t)
+encodeNonEmptyArray :: forall a . (Encoder a) -> Encoder (NonEmptyArray a)
+encodeNonEmptyArray encoder = encodeArray encoder <<< NEA.toArray
 
-encodeJsonNonEmptyArray :: forall a . (Encoder a) -> Encoder (NonEmptyArray a)
-encodeJsonNonEmptyArray encoder = encodeJsonArray encoder <<< NEA.toArray
+encodeNonEmpty_List :: forall a . (Encoder a) -> Encoder (NonEmpty List a)
+encodeNonEmpty_List encoder (NonEmpty h t) = encodeList encoder (h : t)
 
-encodeJsonNonEmpty_List :: forall a . (Encoder a) -> Encoder (NonEmpty List a)
-encodeJsonNonEmpty_List encoder (NonEmpty h t) = encodeJsonList encoder (h : t)
+encodeNonEmptyList :: forall a . (Encoder a) -> Encoder (NonEmptyList a)
+encodeNonEmptyList encoder = encodeList encoder <<< NEL.toList
 
-encodeJsonNonEmptyList :: forall a . (Encoder a) -> Encoder (NonEmptyList a)
-encodeJsonNonEmptyList encoder = encodeJsonList encoder <<< NEL.toList
+encodeChar :: Encoder Char
+encodeChar = encodeString <<< CU.singleton
 
-encodeJsonChar :: Encoder Char
-encodeJsonChar = encodeJsonJString <<< CU.singleton
+encodeArray :: forall a . Encoder a -> Encoder (Array a)
+encodeArray encoder = fromArray <<< map encoder
 
-encodeJsonArray :: forall a . Encoder a -> Encoder (Array a)
-encodeJsonArray encoder = fromArray <<< map encoder
-
-encodeJsonList :: forall a . Encoder a -> Encoder (List a)
-encodeJsonList encoder = fromArray <<< map encoder <<< toUnfoldable
+encodeList :: forall a . Encoder a -> Encoder (List a)
+encodeList encoder = fromArray <<< map encoder <<< toUnfoldable
 
 encodeForeignObject :: forall a . Encoder a -> Encoder (FO.Object a)
 encodeForeignObject encoder = fromObject <<< map encoder
 
 encodeSet :: forall a . (Ord a) => Encoder a -> Encoder (S.Set a)
-encodeSet encoder = encodeJsonList encoder <<< (S.toUnfoldable :: S.Set a -> List a)
+encodeSet encoder = encodeList encoder <<< (S.toUnfoldable :: S.Set a -> List a)
 
 encodeMap :: forall a b . (Ord a) => Encoder a -> Encoder b -> Encoder (M.Map a b)
-encodeMap encoderA encoderB = encodeJsonList (encodeJsonTuple encoderA encoderB) <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))
+encodeMap encoderA encoderB = encodeList (encodeTuple encoderA encoderB) <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))
 
 encodeVoid :: Encoder Void
 encodeVoid = absurd
