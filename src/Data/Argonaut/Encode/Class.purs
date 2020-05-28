@@ -23,7 +23,7 @@ import Record as Record
 import Type.Data.RowList (RLProxy(..))
 
 class EncodeJson a where
-  encodeJson :: Encoder a
+  encodeJson :: a -> Json
 
 instance encodeIdentity :: EncodeJson a => EncodeJson (Identity a) where
   encodeJson = encodeIdentity encodeJson

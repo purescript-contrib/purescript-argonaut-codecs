@@ -23,7 +23,7 @@ import Type.Data.RowList (RLProxy(..))
 import Data.Argonaut.Decode.Decoders
 
 class DecodeJson a where
-  decodeJson :: Decoder a
+  decodeJson :: Json -> Either String a
 
 instance decodeIdentity :: DecodeJson a => DecodeJson (Identity a) where
   decodeJson = decodeIdentity decodeJson
