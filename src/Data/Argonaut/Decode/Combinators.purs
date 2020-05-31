@@ -15,25 +15,22 @@ module Data.Argonaut.Decode.Combinators
   , (.?=)
   ) where
 
-import Prelude
+import Prelude ((<$>))
 
-import Data.Argonaut.Core (Json, isNull)
-import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson, elaborateFailure)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import Data.Either (Either)
+import Data.Maybe (Maybe, fromMaybe)
 import Foreign.Object as FO
 import Prim.TypeError (class Warn, Text)
+import Data.Argonaut.Decode.Decoders as Decoders
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
 -- | Use this accessor if the key and value *must* be present in your object.
 -- | If the key and value are optional, use `getFieldOptional'` (`.:?`) instead.
 getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
-getField o s =
-  maybe
-    (Left $ "Expected field " <> show s)
-    (elaborateFailure s <<< decodeJson)
-    (FO.lookup s o)
+getField = Decoders.getField decodeJson
 
 infix 7 getField as .:
 
@@ -55,16 +52,7 @@ infix 7 getFieldDeprecated as .?
 -- | Use this accessor if the key and value are optional in your object.
 -- | If the key and value are mandatory, use `getField` (`.:`) instead.
 getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional' o s =
-  maybe
-    (pure Nothing)
-    decode
-    (FO.lookup s o)
-  where
-    decode json =
-      if isNull json
-        then pure Nothing
-        else Just <$> (elaborateFailure s <<< decodeJson) json
+getFieldOptional' = Decoders.getFieldOptional' decodeJson
 
 infix 7 getFieldOptional' as .:?
 
@@ -77,13 +65,7 @@ infix 7 getFieldOptional' as .:?
 -- | If you would like to treat `null` values the same as absent values, use
 -- | `getFieldOptional'` (`.:?`) instead.
 getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
-getFieldOptional o s =
-  maybe
-    (pure Nothing)
-    decode
-    (FO.lookup s o)
-  where
-    decode json = Just <$> (elaborateFailure s <<< decodeJson) json
+getFieldOptional = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptional as .:!
 
@@ -93,7 +75,7 @@ getFieldOptionalDeprecated
   => FO.Object Json
   -> String
   -> Either String (Maybe a)
-getFieldOptionalDeprecated = getFieldOptional
+getFieldOptionalDeprecated = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptionalDeprecated as .??
 

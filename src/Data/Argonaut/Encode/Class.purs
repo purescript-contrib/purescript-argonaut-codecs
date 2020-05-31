@@ -1,28 +1,22 @@
 module Data.Argonaut.Encode.Class where
 
-import Prelude
+import Data.Argonaut.Encode.Encoders
 
-import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject, fromString, jsonNull)
-import Data.Array as Arr
+import Data.Argonaut.Core (Json, fromObject)
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Array.NonEmpty as NEA
-import Data.Either (Either, either)
-import Data.Identity (Identity(..))
-import Data.Int (toNumber)
-import Data.List (List(..), (:), toUnfoldable)
-import Data.List as L
-import Data.List.NonEmpty as NEL
+import Data.Either (Either)
+import Data.Identity (Identity)
+import Data.List (List)
 import Data.List.Types (NonEmptyList)
 import Data.Map as M
-import Data.Maybe (Maybe(..))
-import Data.NonEmpty (NonEmpty(..))
+import Data.Maybe (Maybe)
+import Data.NonEmpty (NonEmpty)
 import Data.Set as S
 import Data.String (CodePoint)
-import Data.String.CodePoints as CP
-import Data.String.CodeUnits as CU
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Foreign.Object as FO
+import Prelude (class Ord, Unit, Void, identity, ($))
 import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
@@ -32,78 +26,70 @@ class EncodeJson a where
   encodeJson :: a -> Json
 
 instance encodeIdentity :: EncodeJson a => EncodeJson (Identity a) where
-  encodeJson (Identity a) = encodeJson a
+  encodeJson = encodeIdentity encodeJson
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
-  encodeJson = case _ of
-    Nothing -> jsonNull
-    Just a -> encodeJson a
+  encodeJson = encodeMaybe encodeJson
 
 instance encodeJsonTuple :: (EncodeJson a, EncodeJson b) => EncodeJson (Tuple a b) where
-  encodeJson (Tuple a b) = encodeJson [encodeJson a, encodeJson b]
+  encodeJson = encodeTuple encodeJson encodeJson
 
 instance encodeJsonEither :: (EncodeJson a, EncodeJson b) => EncodeJson (Either a b) where
-  encodeJson = either (obj "Left") (obj "Right")
-    where
-    obj :: forall c. EncodeJson c => String -> c -> Json
-    obj tag x =
-      fromObject 
-        $ FO.fromFoldable 
-        $ Tuple "tag" (fromString tag) : Tuple "value" (encodeJson x) : Nil
+  encodeJson = encodeEither encodeJson encodeJson
 
 instance encodeJsonUnit :: EncodeJson Unit where
-  encodeJson = const jsonNull
+  encodeJson = encodeUnit
 
 instance encodeJsonJBoolean :: EncodeJson Boolean where
-  encodeJson = fromBoolean
+  encodeJson = encodeBoolean
 
 instance encodeJsonJNumber :: EncodeJson Number where
-  encodeJson = fromNumber
+  encodeJson = encodeNumber
 
 instance encodeJsonInt :: EncodeJson Int where
-  encodeJson = fromNumber <<< toNumber
+  encodeJson = encodeInt
 
 instance encodeJsonJString :: EncodeJson String where
-  encodeJson = fromString
+  encodeJson = encodeString
 
 instance encodeJsonJson :: EncodeJson Json where
   encodeJson = identity
 
 instance encodeJsonCodePoint :: EncodeJson CodePoint where
-  encodeJson = encodeJson <<< CP.singleton
+  encodeJson = encodeCodePoint
 
 instance encodeJsonNonEmpty_Array :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
-  encodeJson (NonEmpty h t) = encodeJson (Arr.cons h t)
+  encodeJson = encodeNonEmpty_Array encodeJson
 
 instance encodeJsonNonEmptyArray :: (EncodeJson a) => EncodeJson (NonEmptyArray a) where
-  encodeJson = encodeJson <<< NEA.toArray
+  encodeJson = encodeNonEmptyArray encodeJson
 
 instance encodeJsonNonEmpty_List :: (EncodeJson a) => EncodeJson (NonEmpty List a) where
-  encodeJson (NonEmpty h t) = encodeJson (L.insertAt 0 h t)
+  encodeJson = encodeNonEmpty_List encodeJson
 
 instance encodeJsonNonEmptyList :: (EncodeJson a) => EncodeJson (NonEmptyList a) where
-  encodeJson = encodeJson <<< NEL.toList
+  encodeJson = encodeNonEmptyList encodeJson
 
 instance encodeJsonChar :: EncodeJson Char where
-  encodeJson = encodeJson <<< CU.singleton
+  encodeJson = encodeChar
 
 instance encodeJsonArray :: EncodeJson a => EncodeJson (Array a) where
-  encodeJson = fromArray <<< map encodeJson
+  encodeJson = encodeArray encodeJson
 
 instance encodeJsonList :: EncodeJson a => EncodeJson (List a) where
-  encodeJson = fromArray <<< map encodeJson <<< toUnfoldable
+  encodeJson = encodeList encodeJson
 
 instance encodeForeignObject :: EncodeJson a => EncodeJson (FO.Object a) where
-  encodeJson = fromObject <<< map encodeJson
+  encodeJson = encodeForeignObject encodeJson
 
 instance encodeSet :: (Ord a, EncodeJson a) => EncodeJson (S.Set a) where
-  encodeJson = encodeJson <<< (S.toUnfoldable :: S.Set a -> List a)
+  encodeJson = encodeSet encodeJson
 
 instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a b) where
-  encodeJson = encodeJson <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))
+  encodeJson = encodeMap encodeJson encodeJson
 
 instance encodeVoid :: EncodeJson Void where
-  encodeJson = absurd
+  encodeJson = encodeVoid
 
 instance encodeRecord
   :: ( GEncodeJson row list

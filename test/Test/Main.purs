@@ -141,7 +141,7 @@ combinatorsCheck = do
     case key :=? maybeStr of
       Just (Tuple k json) ->
         pure $ Tuple key (decodeJson json) === Tuple k (Right maybeStr)
-      Nothing -> 
+      Nothing ->
         pure Success
 
   propAssocAppend :: Gen Result

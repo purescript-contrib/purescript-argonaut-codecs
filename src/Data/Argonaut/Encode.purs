@@ -4,7 +4,7 @@ module Data.Argonaut.Encode
   ) where
 
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
-import Data.Argonaut.Encode.Combinators 
+import Data.Argonaut.Encode.Combinators
   ( assoc
   , assocOptional
   , extend
