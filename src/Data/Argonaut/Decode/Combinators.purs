@@ -18,6 +18,7 @@ module Data.Argonaut.Decode.Combinators
 import Prelude ((<$>))
 
 import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode.Errors (JsonDecodeError)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Either (Either)
 import Data.Maybe (Maybe, fromMaybe)
@@ -29,7 +30,7 @@ import Data.Argonaut.Decode.Decoders as Decoders
 -- |
 -- | Use this accessor if the key and value *must* be present in your object.
 -- | If the key and value are optional, use `getFieldOptional'` (`.:?`) instead.
-getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either String a
+getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either JsonDecodeError a
 getField = Decoders.getField decodeJson
 
 infix 7 getField as .:
@@ -39,7 +40,7 @@ getFieldDeprecated
   => DecodeJson a
   => FO.Object Json
   -> String
-  -> Either String a
+  -> Either JsonDecodeError a
 getFieldDeprecated = getField
 
 infix 7 getFieldDeprecated as .?
@@ -51,7 +52,7 @@ infix 7 getFieldDeprecated as .?
 -- |
 -- | Use this accessor if the key and value are optional in your object.
 -- | If the key and value are mandatory, use `getField` (`.:`) instead.
-getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional' :: forall a. DecodeJson a => FO.Object Json -> String -> Either JsonDecodeError (Maybe a)
 getFieldOptional' = Decoders.getFieldOptional' decodeJson
 
 infix 7 getFieldOptional' as .:?
@@ -64,7 +65,7 @@ infix 7 getFieldOptional' as .:?
 -- | This function will treat `null` as a value and attempt to decode it into your desired type.
 -- | If you would like to treat `null` values the same as absent values, use
 -- | `getFieldOptional'` (`.:?`) instead.
-getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional :: forall a. DecodeJson a => FO.Object Json -> String -> Either JsonDecodeError (Maybe a)
 getFieldOptional = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptional as .:!
@@ -74,7 +75,7 @@ getFieldOptionalDeprecated
   => DecodeJson a
   => FO.Object Json
   -> String
-  -> Either String (Maybe a)
+  -> Either JsonDecodeError (Maybe a)
 getFieldOptionalDeprecated = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptionalDeprecated as .??
@@ -98,14 +99,14 @@ infix 7 getFieldOptionalDeprecated as .??
 -- |     baz <- x .:? "baz" .!= false -- optional field with default value of `false`
 -- |     pure $ MyType { foo, bar, baz }
 -- | ```
-defaultField :: forall a. Either String (Maybe a) -> a -> Either String a
+defaultField :: forall a. Either JsonDecodeError (Maybe a) -> a -> Either JsonDecodeError a
 defaultField parser default = fromMaybe default <$> parser
 
 infix 6 defaultField as .!=
 
 defaultFieldDeprecated
   :: forall a. Warn ( Text "`.?=` is deprecated, use `.!=` instead" )
-  => Either String (Maybe a) -> a -> Either String a
+  => Either JsonDecodeError (Maybe a) -> a -> Either JsonDecodeError a
 defaultFieldDeprecated = defaultField
 
 infix 6 defaultFieldDeprecated as .?=
