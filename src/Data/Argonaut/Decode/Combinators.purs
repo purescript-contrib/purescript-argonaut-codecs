@@ -1,21 +1,15 @@
 module Data.Argonaut.Decode.Combinators
   ( getField
-  , getFieldDeprecated
   , getFieldOptional
-  , getFieldOptionalDeprecated
   , getFieldOptional'
   , defaultField
-  , defaultFieldDeprecated
   , (.:)
-  , (.?)
   , (.:!)
   , (.:?)
-  , (.??)
   , (.!=)
-  , (.?=)
   ) where
 
-import Prelude ((<$>))
+import Prelude
 
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
@@ -23,7 +17,6 @@ import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Either (Either)
 import Data.Maybe (Maybe, fromMaybe)
 import Foreign.Object as FO
-import Prim.TypeError (class Warn, Text)
 import Data.Argonaut.Decode.Decoders as Decoders
 
 -- | Attempt to get the value for a given key on an `Object Json`.
@@ -34,16 +27,6 @@ getField :: forall a. DecodeJson a => FO.Object Json -> String -> Either JsonDec
 getField = Decoders.getField decodeJson
 
 infix 7 getField as .:
-
-getFieldDeprecated
-  :: forall a. Warn ( Text "`.?` is deprecated, use `.:` instead" )
-  => DecodeJson a
-  => FO.Object Json
-  -> String
-  -> Either JsonDecodeError a
-getFieldDeprecated = getField
-
-infix 7 getFieldDeprecated as .?
 
 -- | Attempt to get the value for a given key on an `Object Json`.
 -- |
@@ -70,21 +53,11 @@ getFieldOptional = Decoders.getFieldOptional decodeJson
 
 infix 7 getFieldOptional as .:!
 
-getFieldOptionalDeprecated
-  :: forall a. Warn ( Text "`.??` is deprecated, use `.:!` or `.:?` instead" )
-  => DecodeJson a
-  => FO.Object Json
-  -> String
-  -> Either JsonDecodeError (Maybe a)
-getFieldOptionalDeprecated = Decoders.getFieldOptional decodeJson
-
-infix 7 getFieldOptionalDeprecated as .??
-
 -- | Helper for use in combination with `.:?` to provide default values for optional
 -- | `Object Json` fields.
 -- |
 -- | Example usage:
--- | ```purescript
+-- | ```purs
 -- | newtype MyType = MyType
 -- |   { foo :: String
 -- |   , bar :: Maybe Int
@@ -103,10 +76,3 @@ defaultField :: forall a. Either JsonDecodeError (Maybe a) -> a -> Either JsonDe
 defaultField parser default = fromMaybe default <$> parser
 
 infix 6 defaultField as .!=
-
-defaultFieldDeprecated
-  :: forall a. Warn ( Text "`.?=` is deprecated, use `.!=` instead" )
-  => Either JsonDecodeError (Maybe a) -> a -> Either JsonDecodeError a
-defaultFieldDeprecated = defaultField
-
-infix 6 defaultFieldDeprecated as .?=
