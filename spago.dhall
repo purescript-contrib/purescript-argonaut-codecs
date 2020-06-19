@@ -1,4 +1,6 @@
 { name = "argonaut-codecs"
+, license = "MIT"
+, repository = "https://github.com/purescript-contrib/purescript-argonaut-codecs"
 , dependencies =
   [ "argonaut-core"
   , "arrays"
