@@ -1,0 +1,29 @@
+{
+    "name": "purescript-argonaut-codecs",
+    "license": [
+        "MIT"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/purescript-contrib/purescript-argonaut-codecs"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-argonaut-core": "^v5.0.2",
+        "purescript-arrays": "^v5.3.1",
+        "purescript-effect": "^v2.0.1",
+        "purescript-foreign-object": "^v2.0.3",
+        "purescript-generics-rep": "^v6.1.1",
+        "purescript-identity": "^v4.1.0",
+        "purescript-integers": "^v4.0.0",
+        "purescript-maybe": "^v4.0.1",
+        "purescript-nonempty": "^v5.0.0",
+        "purescript-ordered-collections": "^v1.6.1",
+        "purescript-record": "^v2.0.2"
+    }
+}
