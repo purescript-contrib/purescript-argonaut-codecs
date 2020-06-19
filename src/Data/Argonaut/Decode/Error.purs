@@ -1,6 +1,6 @@
 -- | Originally implemented in: 
 -- | https://github.com/garyb/purescript-codec-argonaut
-module Data.Argonaut.Decode.Errors where
+module Data.Argonaut.Decode.Error where
 
 import Prelude
 
