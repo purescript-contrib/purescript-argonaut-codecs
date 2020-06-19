@@ -3,7 +3,7 @@ module Data.Argonaut.Decode.Class where
 import Data.Argonaut.Decode.Decoders
 
 import Data.Argonaut.Core (Json, toObject)
-import Data.Argonaut.Decode.Errors (JsonDecodeError(..))
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))

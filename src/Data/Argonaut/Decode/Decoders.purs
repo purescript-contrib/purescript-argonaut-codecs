@@ -3,7 +3,7 @@ module Data.Argonaut.Decode.Decoders where
 import Prelude
 
 import Data.Argonaut.Core (Json, caseJsonBoolean, caseJsonNull, caseJsonNumber, caseJsonString, isNull, toArray, toObject, toString, fromString)
-import Data.Argonaut.Decode.Errors (JsonDecodeError(..))
+import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
