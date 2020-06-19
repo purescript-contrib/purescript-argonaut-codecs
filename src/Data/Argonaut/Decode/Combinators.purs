@@ -18,7 +18,7 @@ module Data.Argonaut.Decode.Combinators
 import Prelude ((<$>))
 
 import Data.Argonaut.Core (Json)
-import Data.Argonaut.Decode.Errors (JsonDecodeError)
+import Data.Argonaut.Decode.Error (JsonDecodeError)
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 import Data.Either (Either)
 import Data.Maybe (Maybe, fromMaybe)

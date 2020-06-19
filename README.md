@@ -13,11 +13,7 @@
 This library is bundled as part of [Argonaut](https://github.com/purescript-contrib/purescript-argonaut) and can be installed via that library. To install just `argonaut-codecs`:
 
 ```sh
-# with Spago
 spago install argonaut-codecs
-
-# with Bower
-bower install purescript-argonaut-codecs
 ```
 
 ## Documentation
@@ -43,22 +39,28 @@ type User = { name :: String, age :: Maybe Int }
 userToJson :: User -> Json
 userToJson = encodeJson
 
-userFromJson :: Json -> Either String User
+userFromJson :: Json -> Either JsonDecodeError User
 userFromJson = decodeJson
 ```
 
 In a REPL we can see these functions in action:
 
-```
+```text
+> type User = { name :: String, age :: Maybe Int }
 > user = { name: "Tom", age: Just 25 }
 > stringify (encodeJson user)
 "{\"name\":\"Tom\",\"age\":25}"
 
-> (decodeJson =<< jsonParser "{\"name\":\"Tom\",\"age\":25}") :: Either String User
+> (decodeJson =<< parseJson """{ "name": "Tom", "age": 25 }""") :: Either JsonDecodeError User
 Right { name: "Tom", age: Just 25 }
 
-> (decodeJson =<< jsonParser "{\"name\":\"Tom\"}") :: Either String User
-Left "JSON was missing expected field: age"
+> res = (decodeJson =<< parseJson """{ "name": "Tom" }""") :: Either JsonDecodeError User
+> res
+Left (AtKey "age" MissingValue)
+
+# You can print errors
+> lmap printJsonDecodeError res
+Left "An error occurred while decoding a JSON value:\n  At object key 'age':\n  No value was found."
 ```
 
 ## Tutorial
@@ -67,22 +69,20 @@ This library provides provides type classes and combinators for convenient encod
 
 As a brief aside: this library works with `Json` values, not raw JSON strings.
 
-- If you need to parse `Json` from a JSON string so that you can use `decodeJson`, then you should use the `jsonParser` function from `argonaut-core`.
+- If you need to parse `Json` from a JSON string so that you can use `decodeJson`, then you should use the `parseJson` function from `Data.Argonaut.Decode.Parser` (re-exported by `Data.Argonaut.Decode`).
 - If you need to print `Json` as a valid JSON string (after using `encodeJson`, for example), then you should use the `stringify` function from `argonaut-core`.
 
-#### Setup
+### Setup
 
 You can follow along with this tutorial in a repl. You should install these dependencies:
 
 ```sh
-# with Spago
 spago install argonaut-codecs validation
-
-# with Bower
-bower install purescript-argonaut-codecs purescript-validation
 ```
 
-Next, import the modules used in this tutorial -- you can also install `argonaut` and only import `Data.Argonaut` if you'd like to cut down on imports:
+> You can also install `argonaut` and only import `Data.Argonaut` instead of all the individual `Data.Argonaut.*` modules, if you prefer a shorter import list.
+
+Next, import the modules used in this tutorial:
 
 ```purs
 import Prelude
@@ -91,13 +91,15 @@ import Control.Alternative
 import Data.Argonaut.Core
 import Data.Argonaut.Encode
 import Data.Argonaut.Decode
-import Data.Argonaut.Parser
+import Data.Bifunctor
 import Data.Maybe
+import Data.Newtype
 import Data.Either
 import Data.Validation.Semigroup
+import Foreign.Object
 ```
 
-> Tip: you can place this snippet in a `.purs-repl` file so the imports are loaded automatically when you run `spago repl` or `pulp repl`.
+> Tip: you can place this snippet in a `.purs-repl` file so the imports are loaded automatically when you run `spago repl`
 
 ### Automatic Encoding & Decoding
 
@@ -113,7 +115,7 @@ type User =
 
 > Tip: If you're following along in the repl, you can either define this type on one line or use `:paste` to input multiple lines followed by Ctrl+D to end the paste.
 
-##### Automatic encoding with `EncodeJson` and `encodeJson`
+#### Automatic encoding with `EncodeJson` and `encodeJson`
 
 We can automatically encode `Json` using the `EncodeJson` type class ([pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs/docs/Data.Argonaut.Encode#t:EncodeJson)).
 
@@ -125,13 +127,13 @@ encodeJson :: EncodeJson a => a -> Json
 
 > Tip: There is no `Show` instance for `Json`. To print a `Json` value as a valid JSON string, use `stringify` -- it's the same as the [JavaScript `stringify` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify).
 
-```
+```text
 > user = { name: "Tom", age: Just 25, team: Just "Red Team" } :: User
 > stringify (encodeJson user)
 "{\"name\":\"Tom\",\"age\":25,\"team\":\"Red Team\"}"
 ```
 
-##### Automatic decoding with `DecodeJson` and `decodeJson`
+#### Automatic decoding with `DecodeJson` and `decodeJson`
 
 We can automatically decode `Json` using the `DecodeJson` type class ([pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs/docs/Data.Argonaut.Decode#t:DecodeJson)).
 
@@ -141,24 +143,33 @@ Every type within `User` has an instance for `DecodeJson`, which means we can us
 decodeJson :: DecodeJson a => Json -> Either String a
 ```
 
-> Tip: To parse a JSON string as a `Json` value, you can use the `jsonParser` function (which can fail). If you are sure you have valid JSON, then consider writing it in an FFI file and foreign importing it as `Json` as described in the [`argonaut-core` documentation](https://github.com/purescript-contrib/purescript-argonaut-core#introducing-json-values).
+> Tip: To parse a JSON string as a `Json` value, you can use the `parseJson` function (which can fail). If you are sure you have valid JSON, then consider writing it in an FFI file and foreign importing it as `Json` as described in the [`argonaut-core` documentation](https://github.com/purescript-contrib/purescript-argonaut-core#introducing-json-values).
 
-```
+```text
 > userJsonString = """{ "name": "Tom", "age": 25, "team": null }"""
-> decodedUser = decodeJson =<< jsonParser userJsonString
+> decodedUser = decodeJson =<< parseJson userJsonString
 
-# there is no `Show` instance for `Json`, so we'll stringify
-# the decoded result so it can be displayed in the repl
+# there is no `Show` instance for `Json`, so we'll stringify the decoded result
+# so it can be displayed in the repl
 > map stringify decodedUser
 Right "{\"name\":\"Tom\",\"age\":25,\"team\":null}"
 ```
 
 Decoding can fail if the `Json` doesn't match the shape expected by a `DecodeJson` instance; in that case, an error is returned instead of the decoded value.
 
-```
+```text
 > badUserJsonString = """{ "name": "Tom", "age": null }"""
-> (decodeJson =<< jsonParser badUserJsonString) :: Either String User
-Left "JSON was missing expected field: team"
+> decoded = (decodeJson =<< parseJson badUserJsonString) :: Either JsonDecodeError User
+> decoded
+Left (AtKey "team" MissingValue)
+```
+
+This library uses an error type to represent possible ways that decoding JSON can fail, and it then uses this error type to create helpful error messages. For example, our input JSON was a valid object, but it was missing the "team" key that we need in order to decode to a valid `User`. We can print our error to get a human-friendly string message:
+
+```text
+> lmap printDecodeJsonError decoded
+> printDecodeJsonError (AtKey "team" MissingValue)
+Left "An error occurred while decoding a JSON value:\n  At object key 'team':\n  No value was found."
 ```
 
 ### Writing New Instances
@@ -258,7 +269,7 @@ teamFromString = case _ of
 We can use this function to write a `DecodeJson` instance for our type. As a quick reminder, this is the type signature required by `decodeJson`:
 
 ```purs
-decodeJson :: DecodeJson a => Json -> Either String a
+decodeJson :: DecodeJson a => Json -> Either JsonDecodeError a
 ```
 
 Let's write the instance using `note` from `purescript-either`:
@@ -267,8 +278,7 @@ Let's write the instance using `note` from `purescript-either`:
 instance decodeJsonTeam :: DecodeJson Team where
   decodeJson json = do
     string <- decodeJson json
-    let decodeError = "Could not decode Team from " <> string
-    note decodeError (teamFromString string)
+    note (TypeMismatch "Team") (teamFromString string)
 ```
 
 If your type can be represented easily with a `String`, `Number`, `Boolean`, or array of one of these types, then its `DecodeJson` will most likely look similar to this one.
@@ -281,7 +291,7 @@ However, quite often your data type will require representation as an object. Th
 
 Let's use these combinators to decode a `Json` object into our `AppUser` record.
 
-The `decodeJson` function returns an `Either String a` value; `Either` is a monad, which means we can use convenient `do` syntax to write our decoder. If a step in decoding succeeds, then its result is passed to the next step. If any step in decoding fails, the entire computation will abort with the error it encountered.
+The `decodeJson` function returns an `Either JsonDecodeErorr a` value; `Either` is a monad, which means we can use convenient `do` syntax to write our decoder. If a step in decoding succeeds, then its result is passed to the next step. If any step in decoding fails, the entire computation will abort with the error it encountered.
 
 ```purs
 instance decodeJsonAppUser :: DecodeJson AppUser where
@@ -299,14 +309,14 @@ To recap: manually decoding your data type involves a few steps:
 1. Ensure that all types you are decoding have a `DecodeJson` instance
 2. Use `.:` to decode object fields where the key must exist
 3. Use `.:?` to decode object fields where the key may exist or its value may be null
-3. Use `.!=` to provide a default value for fields which may exist in the `Json`, but must exist in the type you're decoding to (it's like `fromMaybe` for your decoder, unwrapping the decoded value).
-4. It's common to use the `Either` monad for convenience when writing decoders. Any failed decoding step will abort the entire computation with that error. See [Solving Common Problems](#solving-common-problems) for alternative approaches to decoding.
+4. Use `.!=` to provide a default value for fields which may exist in the `Json`, but must exist in the type you're decoding to (it's like `fromMaybe` for your decoder, unwrapping the decoded value).
+5. It's common to use the `Either` monad for convenience when writing decoders. Any failed decoding step will abort the entire computation with that error. See [Solving Common Problems](#solving-common-problems) for alternative approaches to decoding.
 
-#### Deriving Instances
+### Deriving Instances
 
 There are two ways to derive instances of `EncodeJson` and `DecodeJson` for new types.
 
-##### Newtype Deriving
+#### Newtype Deriving
 
 We intentionally introduced a newtype around a record, `AppUser`, so that we could hand-write type class instances for it. What if we'd needed the newtype for another reason, and we planned on using the same encoding and decoding as the underlying type's instances provide?
 
@@ -321,7 +331,7 @@ derive newtype instance encodeJsonAppUser :: EncodeJson AppUser
 derive newtype instance decodeJsonAppUser :: DecodeJson AppUser
 ```
 
-##### Generics
+#### Generics
 
 If your data type has an instance of `Generic`, then you can use [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) to leverage `genericEncodeJson` and `genericDecodeJson` to write your instances:
 
@@ -342,6 +352,7 @@ instance decodeJsonTeam :: DecodeJson Team where
 ```
 
 Here is another example of how to derive a generic instance of a type with a type variable. This type also happens to be recursive:
+
 ```purs
 data Chain a
   = End a
@@ -350,14 +361,13 @@ data Chain a
 derive instance genericChain :: Generic (Chain a) _
 
 instance encodeJsonChain :: EncodeJson a => EncodeJson (Chain a) where
-  encodeJson c = genericEncodeJson c
+  encodeJson chain = genericEncodeJson chain
 
 instance decodeJsonChain :: DecodeJson a => DecodeJson (Chain a) where
-  decodeJson c = genericDecodeJson c
+  decodeJson chain = genericDecodeJson chain
 ```
 
-Note the addition of instance dependencies for the type variable `a`.
-Also note that these instances for a recursive type cannot be written in point-free style, as that would likely cause a stack overflow during execution. Instead, we use the variables `c` to apply eta-expansion.
+Note the addition of instance dependencies for the type variable `a`. Also note that these instances for a recursive type cannot be written in point-free style, as that would likely cause a stack overflow during execution. Instead, we use the variables `chain` to apply eta-expansion.
 
 More information about how to derive generic instances can be found in this [24-days-of-purescript post](https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown#deriving-generic-instances).
 
@@ -437,7 +447,7 @@ When our application is running we know who the currently-authenticated user is,
 In these cases, unfortunately, you can't write an instance of `DecodeJson` for the data type. You can, however, write `decodeJsonAuthor` and use it without the type class. For instance:
 
 ```purs
-decodeJsonAuthor :: Maybe Username -> Json -> Either String Author
+decodeJsonAuthor :: Maybe Username -> Json -> Either JsonDecodeError Author
 decodeJsonAuthor maybeUsername json = do
   obj <- decodeJson json
   author <- obj .: "author"
@@ -448,7 +458,7 @@ decodeJsonAuthor maybeUsername json = do
     -- user is not the author, or no one is logged in, so use the `following` flag
     otherwise -> author # if following then Following else NotFollowing
 
-decodeJsonBlogPost :: Maybe Username -> Json -> Either String BlogPost
+decodeJsonBlogPost :: Maybe Username -> Json -> Either JsonDecodeError BlogPost
 decodeJsonBlogPost username json = do
   obj <- decodeJson json
   title <- obj .: "title"
@@ -473,10 +483,10 @@ newtype PreciseDateTime = PreciseDateTime PDT.PreciseDateTime
 instance decodeJsonPreciseDateTime :: DecodeJson PreciseDateTime where
   decodeJson json = fromString =<< decodeJson json
     where
-    fromString :: String -> Either String PreciseDateTime
+    fromString :: String -> Either JsonDecodeError PreciseDateTime
     fromString =
       map PreciseDateTime
-        <<< note "Could not parse RFC3339 string"
+        <<< note (TypeMismatch "RFC3339String")
         <<< PDT.fromRFC3339String
         <<< RFC3339String
 ```
@@ -499,7 +509,7 @@ newtype User = User
 derive instance newtypeUser :: Newtype User _
 derive newtype instance showUser :: Show User
 
-decodeUser :: Json -> Either String User
+decodeUser :: Json -> Either JsonDecodeError User
 decodeUser json = do
   obj <- decodeJson json
   name <- obj .: "name"
@@ -510,22 +520,21 @@ decodeUser json = do
 
 Running this in the REPL with bad input, we only see the first error:
 
-```
-> decodeUser =<< jsonParser "{}"
-Left "Expected field \"name\""
+```text
+> decodeUser =<< parseJson "{}"
+Left (AtKey "name" MissingValue)
 ```
 
 However, by collecting results into `V` instead of into `Either` we will accumulate all errors. We can even make it a little nicer by writing a new operator, `.:|`, which works in `V`:
 
 ```purs
 -- a replacement for `decodeJson`
-decodeJsonV :: forall a. DecodeJson a => Json -> V (Array String) a
+decodeJsonV :: forall a. DecodeJson a => Json -> V (Array JsonDecodeError) a
 decodeJsonV = either (invalid <<< pure) pure <<< decodeJson
 
 -- a replacement for `getField`
-getFieldV :: forall a. DecodeJson a => Object Json -> String -> V (Array String) a
-getFieldV object key =
-  either (invalid <<< pure) pure (object .: key)
+getFieldV :: forall a. DecodeJson a => Object Json -> String -> V (Array JsonDecodeError) a
+getFieldV object key = either (invalid <<< pure) pure (object .: key)
 
 -- a replacement for .:
 infix 7 getFieldV as .:|
@@ -534,9 +543,9 @@ infix 7 getFieldV as .:|
 With this new operator and applicative-do we can recreate our original decoder, except with accumulating errors this time:
 
 ```purs
-decodeUser :: Json -> Either (Array String) User
+decodeUser :: Json -> Either (Array JsonDecodeError) User
 decodeUser json = do
-  user <- toEither $ V.andThen (decodeJsonV json) \obj -> ado
+  user <- toEither $ andThen (decodeJsonV json) \obj -> ado
     name <- obj .:| "name"
     age <- obj .:| "age"
     location <- obj .:| "location"
@@ -544,15 +553,16 @@ decodeUser json = do
   pure $ User user
 ```
 
+> Note: If you are doing this in the repl, you can't define an infix operator. Use `getFieldV` in place of `.:|`.
+
 This decoder will now print all errors:
 
-```
-> import Data.Bifunctor (lmap)
-> decodeUser =<< lmap pure (jsonParser "{}")
+```text
+> decodeUser =<< lmap pure (parseJson "{}")
 Left
-  [ "Expected field \"name\""
-  , "Expected field \"age\""
-  , "Expected field \"location\""
+  [ AtKey "name" MissingValue
+  , AtKey "age" MissingValue
+  , AtKey "location" MissingValue
   ]
 ```
 
