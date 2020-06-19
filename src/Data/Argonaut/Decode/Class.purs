@@ -90,10 +90,10 @@ instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a
 instance decodeVoid :: DecodeJson Void where
   decodeJson = decodeVoid
 
-instance decodeRecord 
+instance decodeRecord
   :: ( GDecodeJson row list
      , RL.RowToList row list
-     ) 
+     )
   => DecodeJson (Record row) where
   decodeJson json =
     case toObject json of
