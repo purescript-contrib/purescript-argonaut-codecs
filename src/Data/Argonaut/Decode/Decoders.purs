@@ -2,7 +2,8 @@ module Data.Argonaut.Decode.Decoders where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, caseJsonBoolean, caseJsonNull, caseJsonNumber, caseJsonString, isNull, stringify, toArray, toObject, toString)
+import Data.Argonaut.Core (Json, caseJsonBoolean, caseJsonNull, caseJsonNumber, caseJsonString, isNull, toArray, toObject, toString, fromString)
+import Data.Argonaut.Decode.Errors (JsonDecodeError(..))
 import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
@@ -24,125 +25,125 @@ import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
-decodeIdentity :: ∀ a . (Json -> Either String a) -> Json -> Either String (Identity a)
+decodeIdentity :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (Identity a)
 decodeIdentity decoder j = Identity <$> decoder j
 
-decodeMaybe :: ∀ a . (Json -> Either String a) -> Json -> Either String (Maybe a)
+decodeMaybe :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (Maybe a)
 decodeMaybe decoder j
   | isNull j = pure Nothing
   | otherwise = Just <$> decoder j
 
-decodeTuple :: ∀ a b . (Json -> Either String a) -> (Json -> Either String b) -> Json -> Either String (Tuple a b)
+decodeTuple :: ∀ a b . (Json -> Either JsonDecodeError a) -> (Json -> Either JsonDecodeError b) -> Json -> Either JsonDecodeError (Tuple a b)
 decodeTuple decoderA decoderB j = decodeArray Right j >>= f
   where
-  f :: Array Json -> Either String (Tuple a b)
+  f :: Array Json -> Either JsonDecodeError (Tuple a b)
   f [a, b] = Tuple <$> decoderA a <*> decoderB b
-  f _ = Left "Couldn't decode Tuple"
+  f _ = Left $ TypeMismatch "Tuple"
 
-decodeEither :: ∀ a b . (Json -> Either String a) -> (Json -> Either String b) -> Json -> Either String (Either a b)
+decodeEither :: ∀ a b . (Json -> Either JsonDecodeError a) -> (Json -> Either JsonDecodeError b) -> Json -> Either JsonDecodeError (Either a b)
 decodeEither decoderA decoderB j =
-  lmap ("Couldn't decode Either: " <> _) $
+  lmap (Named "Either") $
     decodeJObject j >>= \obj -> do
-      tag <- maybe (Left "Expected field 'tag'") Right $ FO.lookup "tag" obj
-      val <- maybe (Left "Expected field 'value'") Right $ FO.lookup "value" obj
+      tag <- maybe (Left $ AtKey "tag" MissingValue) Right $ FO.lookup "tag" obj
+      val <- maybe (Left $ AtKey "value" MissingValue) Right $ FO.lookup "value" obj
       case toString tag of
         Just "Right" -> Right <$> decoderB val
         Just "Left" -> Left <$> decoderA val
-        _ -> Left "'tag' field was not \"Left\" or \"Right\""
+        _ -> Left $ AtKey "tag" (UnexpectedValue tag)
 
-decodeNull :: Json -> Either String Unit
-decodeNull = caseJsonNull (Left "Value is not a null") (const $ Right unit)
+decodeNull :: Json -> Either JsonDecodeError Unit
+decodeNull = caseJsonNull (Left $ TypeMismatch "null") (const $ Right unit)
 
-decodeBoolean :: Json -> Either String Boolean
-decodeBoolean = caseJsonBoolean (Left "Value is not a Boolean") Right
+decodeBoolean :: Json -> Either JsonDecodeError Boolean
+decodeBoolean = caseJsonBoolean (Left $ TypeMismatch "Boolean") Right
 
-decodeNumber :: Json -> Either String Number
-decodeNumber = caseJsonNumber (Left "Value is not a Number") Right
+decodeNumber :: Json -> Either JsonDecodeError Number
+decodeNumber = caseJsonNumber (Left $ TypeMismatch "Number") Right
 
-decodeInt :: Json -> Either String Int
+decodeInt :: Json -> Either JsonDecodeError Int
 decodeInt =
-  maybe (Left "Value is not an Integer") Right
+  maybe (Left $ TypeMismatch "Integer") Right
     <<< fromNumber
     <=< decodeNumber
 
-decodeString :: Json -> Either String String
-decodeString = caseJsonString (Left "Value is not a String") Right
+decodeString :: Json -> Either JsonDecodeError String
+decodeString = caseJsonString (Left $ TypeMismatch "String") Right
 
-decodeNonEmpty_Array :: ∀ a . (Json -> Either String a) -> Json -> Either String (NonEmpty Array a)
+decodeNonEmpty_Array :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (NonEmpty Array a)
 decodeNonEmpty_Array decoder =
-  lmap ("Couldn't decode NonEmpty Array: " <> _)
-    <<< (traverse decoder <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
+  lmap (Named "NonEmpty Array")
+    <<< (traverse decoder <=< (rmap (\x -> x.head :| x.tail) <<< note (TypeMismatch "NonEmpty Array") <<< Arr.uncons) <=< decodeJArray)
 
-decodeNonEmptyArray :: ∀ a . (Json -> Either String a) -> Json -> Either String (NonEmptyArray a)
+decodeNonEmptyArray :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (NonEmptyArray a)
 decodeNonEmptyArray decoder =
-  lmap ("Couldn't decode NonEmptyArray: " <> _)
-    <<< (traverse decoder <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> NEA.cons' x.head x.tail) <<< note " is empty" <<< Arr.uncons) <=< decodeJArray)
+  lmap (Named "NonEmptyArray")
+    <<< (traverse decoder <=< (rmap (\x -> NEA.cons' x.head x.tail) <<< note (TypeMismatch "NonEmptyArray") <<< Arr.uncons) <=< decodeJArray)
 
-decodeNonEmpty_List :: ∀ a . (Json -> Either String a) -> Json -> Either String (NonEmpty List a)
+decodeNonEmpty_List :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (NonEmpty List a)
 decodeNonEmpty_List decoder =
-  lmap ("Couldn't decode NonEmpty List: " <> _)
-    <<< (traverse decoder <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> x.head :| x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
+  lmap (Named "NonEmpty List")
+    <<< (traverse decoder <=< (rmap (\x -> x.head :| x.tail) <<< note (TypeMismatch "NonEmpty List") <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
 
-decodeNonEmptyList :: ∀ a . (Json -> Either String a) -> Json -> Either String (NonEmptyList a)
+decodeNonEmptyList :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (NonEmptyList a)
 decodeNonEmptyList decoder =
-  lmap ("Couldn't decode NonEmptyList: " <> _)
-    <<< (traverse decoder <=< (lmap ("JSON Array" <> _) <<< rmap (\x -> NEL.cons' x.head x.tail) <<< note " is empty" <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
+  lmap (Named "NonEmptyList")
+    <<< (traverse decoder <=< (rmap (\x -> NEL.cons' x.head x.tail) <<< note (TypeMismatch "NonEmptyList") <<< L.uncons) <=< map (map fromFoldable) decodeJArray)
 
-decodeCodePoint :: Json -> Either String CodePoint
+decodeCodePoint :: Json -> Either JsonDecodeError CodePoint
 decodeCodePoint j =
-  maybe (Left $ "Expected character but found: " <> stringify j) Right
+  maybe (Left $ Named "CodePoint" $ UnexpectedValue j) Right
     =<< codePointAt 0 <$> decodeString j
 
-decodeForeignObject :: ∀ a . (Json -> Either String a) -> Json -> Either String (FO.Object a)
+decodeForeignObject :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (FO.Object a)
 decodeForeignObject decoder =
-  lmap ("Couldn't decode ForeignObject: " <> _)
+  lmap (Named "ForeignObject")
     <<< (traverse decoder <=< decodeJObject)
 
-decodeArray :: ∀ a . (Json -> Either String a) -> Json -> Either String (Array a)
+decodeArray :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (Array a)
 decodeArray decoder =
-  lmap ("Couldn't decode Array (" <> _)
+  lmap (Named "Array")
     <<< (traverseWithIndex f <=< decodeJArray)
   where
-  msg i m = "Failed at index " <> show i <> "): " <> m
+  msg i m = AtIndex i m
   f i = lmap (msg i) <<< decoder
 
-decodeList :: ∀ a . (Json -> Either String a) -> Json -> Either String (List a)
+decodeList :: ∀ a . (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (List a)
 decodeList decoder =
-  lmap ("Couldn't decode List: " <> _)
+  lmap (Named "List")
     <<< (traverse decoder <=< map (map fromFoldable) decodeJArray)
 
-decodeSet :: ∀ a . Ord a => (Json -> Either String a) -> Json -> Either String (S.Set a)
+decodeSet :: ∀ a . Ord a => (Json -> Either JsonDecodeError a) -> Json -> Either JsonDecodeError (S.Set a)
 decodeSet decoder = map (S.fromFoldable :: List a -> S.Set a) <<< decodeList decoder
 
-decodeMap :: ∀ a b . Ord a => (Json -> Either String a) -> (Json -> Either String b) -> Json -> Either String (M.Map a b)
+decodeMap :: ∀ a b . Ord a => (Json -> Either JsonDecodeError a) -> (Json -> Either JsonDecodeError b) -> Json -> Either JsonDecodeError (M.Map a b)
 decodeMap decoderA decoderB = map (M.fromFoldable :: List (Tuple a b) -> M.Map a b) <<< decodeList (decodeTuple decoderA decoderB)
 
-decodeVoid :: Json -> Either String Void
-decodeVoid _ = Left "Value cannot be Void"
+decodeVoid :: Json -> Either JsonDecodeError Void
+decodeVoid _ = Left $ UnexpectedValue $ fromString "Value cannot be Void"
 
-decodeJArray :: Json -> Either String (Array Json)
-decodeJArray = maybe (Left "Value is not an Array") Right <<< toArray
+decodeJArray :: Json -> Either JsonDecodeError (Array Json)
+decodeJArray = maybe (Left $ TypeMismatch "Array") Right <<< toArray
 
-decodeJObject :: Json -> Either String (FO.Object Json)
-decodeJObject = maybe (Left "Value is not an Object") Right <<< toObject
+decodeJObject :: Json -> Either JsonDecodeError (FO.Object Json)
+decodeJObject = maybe (Left $ TypeMismatch "Object") Right <<< toObject
 
-getField :: forall a. (Json -> Either String a) -> FO.Object Json -> String -> Either String a
+getField :: forall a. (Json -> Either JsonDecodeError a) -> FO.Object Json -> String -> Either JsonDecodeError a
 getField decoder o s =
   maybe
-    (Left $ "Expected field " <> show s)
-    (elaborateFailure s <<< decoder)
+    (Left $ AtKey s MissingValue)
+    (lmap (AtKey s) <<< decoder)
     (FO.lookup s o)
 
-getFieldOptional :: forall a. (Json -> Either String a) -> FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional :: forall a. (Json -> Either JsonDecodeError a) -> FO.Object Json -> String -> Either JsonDecodeError (Maybe a)
 getFieldOptional decoder o s =
   maybe
     (pure Nothing)
     decode
     (FO.lookup s o)
   where
-    decode json = Just <$> (elaborateFailure s <<< decoder) json
+    decode json = Just <$> (lmap (AtKey s) <<< decoder) json
 
-getFieldOptional' :: forall a. (Json -> Either String a) -> FO.Object Json -> String -> Either String (Maybe a)
+getFieldOptional' :: forall a. (Json -> Either JsonDecodeError a) -> FO.Object Json -> String -> Either JsonDecodeError (Maybe a)
 getFieldOptional' decoder o s =
   maybe
     (pure Nothing)
@@ -152,10 +153,4 @@ getFieldOptional' decoder o s =
     decode json =
       if isNull json
         then pure Nothing
-        else Just <$> (elaborateFailure s <<< decoder) json
-
-elaborateFailure :: ∀ a. String -> Either String a -> Either String a
-elaborateFailure s e =
-  lmap msg e
-  where
-    msg m = "Failed to decode key '" <> s <> "': " <> m
+        else Just <$> (lmap (AtKey s) <<< decoder) json

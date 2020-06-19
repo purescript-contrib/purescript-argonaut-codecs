@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "purescript-argonaut-core": "^5.0.0",
+    "purescript-generics-rep": "^6.1.1",
     "purescript-integers": "^4.0.0",
     "purescript-maybe": "^4.0.0",
     "purescript-ordered-collections": "^1.0.0",

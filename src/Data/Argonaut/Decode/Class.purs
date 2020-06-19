@@ -1,10 +1,12 @@
 module Data.Argonaut.Decode.Class where
 
-import Prelude (class Ord, Unit, Void, bind, ($), (<<<), (<>))
+import Prelude (class Ord, Unit, Void, bind, ($), (<<<))
 
 import Data.Argonaut.Core (Json, toObject)
+import Data.Argonaut.Decode.Errors (JsonDecodeError(..))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Either (Either(..))
+import Data.Bifunctor (lmap)
 import Data.Identity (Identity)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
@@ -23,7 +25,7 @@ import Type.Data.RowList (RLProxy(..))
 import Data.Argonaut.Decode.Decoders
 
 class DecodeJson a where
-  decodeJson :: Json -> Either String a
+  decodeJson :: Json -> Either JsonDecodeError a
 
 instance decodeIdentity :: DecodeJson a => DecodeJson (Identity a) where
   decodeJson = decodeIdentity decodeJson
@@ -96,10 +98,10 @@ instance decodeRecord
   decodeJson json =
     case toObject json of
       Just object -> gDecodeJson object (RLProxy :: RLProxy list)
-      Nothing     -> Left "Could not convert JSON to object"
+      Nothing     -> Left $ TypeMismatch "Object"
 
 class GDecodeJson (row :: # Type) (list :: RL.RowList) | list -> row where
-  gDecodeJson :: FO.Object Json -> RLProxy list -> Either String (Record row)
+  gDecodeJson :: FO.Object Json -> RLProxy list -> Either JsonDecodeError (Record row)
 
 instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
   gDecodeJson _ _ = Right {}
@@ -120,11 +122,11 @@ instance gDecodeJsonCons
       fieldName = reflectSymbol sProxy
     in case FO.lookup fieldName object of
       Just jsonVal -> do
-        val <- elaborateFailure fieldName <<< decodeJson $ jsonVal
+        val <- lmap (AtKey fieldName) <<< decodeJson $ jsonVal
 
         rest <- gDecodeJson object (RLProxy :: RLProxy tail)
 
         Right $ Record.insert sProxy val rest
 
       Nothing ->
-        Left $ "JSON was missing expected field: " <> fieldName
+        Left $ AtKey fieldName MissingValue
