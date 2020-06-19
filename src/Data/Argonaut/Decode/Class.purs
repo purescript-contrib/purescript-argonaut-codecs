@@ -1,12 +1,12 @@
 module Data.Argonaut.Decode.Class where
 
-import Prelude (class Ord, Unit, Void, bind, ($), (<<<))
+import Data.Argonaut.Decode.Decoders
 
 import Data.Argonaut.Core (Json, toObject)
 import Data.Argonaut.Decode.Errors (JsonDecodeError(..))
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Either (Either(..))
 import Data.Bifunctor (lmap)
+import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
@@ -18,11 +18,11 @@ import Data.String (CodePoint)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple)
 import Foreign.Object as FO
+import Prelude (class Ord, Unit, Void, bind, ($), (<<<))
 import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
 import Type.Data.RowList (RLProxy(..))
-import Data.Argonaut.Decode.Decoders
 
 class DecodeJson a where
   decodeJson :: Json -> Either JsonDecodeError a
@@ -90,15 +90,15 @@ instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a
 instance decodeVoid :: DecodeJson Void where
   decodeJson = decodeVoid
 
-instance decodeRecord
+instance decodeRecord 
   :: ( GDecodeJson row list
      , RL.RowToList row list
-     )
+     ) 
   => DecodeJson (Record row) where
   decodeJson json =
     case toObject json of
       Just object -> gDecodeJson object (RLProxy :: RLProxy list)
-      Nothing     -> Left $ TypeMismatch "Object"
+      Nothing -> Left $ TypeMismatch "Object"
 
 class GDecodeJson (row :: # Type) (list :: RL.RowList) | list -> row where
   gDecodeJson :: FO.Object Json -> RLProxy list -> Either JsonDecodeError (Record row)
@@ -114,19 +114,16 @@ instance gDecodeJsonCons
      , Row.Lacks field rowTail
      )
   => GDecodeJson row (RL.Cons field value tail) where
-  gDecodeJson object _ =
-    let
-      sProxy :: SProxy field
-      sProxy = SProxy
+  gDecodeJson object _ = do
+    let 
+      _field = SProxy :: SProxy field 
+      fieldName = reflectSymbol _field
 
-      fieldName = reflectSymbol sProxy
-    in case FO.lookup fieldName object of
+    case FO.lookup fieldName object of
       Just jsonVal -> do
         val <- lmap (AtKey fieldName) <<< decodeJson $ jsonVal
-
         rest <- gDecodeJson object (RLProxy :: RLProxy tail)
-
-        Right $ Record.insert sProxy val rest
+        Right $ Record.insert _field val rest
 
       Nothing ->
         Left $ AtKey fieldName MissingValue

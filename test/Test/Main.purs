@@ -123,14 +123,19 @@ combinatorsCheck :: Test
 combinatorsCheck = do
   test "Check assoc builder `:=`" do
     quickCheck propAssocBuilderStr
+
   test "Check assocOptional builder `:=?`" do
     quickCheck propAssocOptionalBuilderStr
+
   test "Check JAssoc append `~>`" do
     quickCheck propAssocAppend
+
   test "Check JAssoc appendOptional `~>?`" do
     quickCheck propAssocAppendOptional
+
   test "Check get field `obj .: 'foo'`" do -- this doesn't really test .:
     quickCheck propGetJObjectField
+
   where
   propAssocBuilderStr :: Gen Result
   propAssocBuilderStr = do
@@ -173,6 +178,7 @@ combinatorsCheck = do
   propGetJObjectField = do
     obj <- genObj
     pure (true === maybe false go (toObject obj))
+
     where
     go :: FO.Object Json -> Boolean
     go object =
@@ -215,14 +221,17 @@ manualRecordDecode = do
         case decodeJson fooNestedEmptyJson of
           Right (FooNested { bar: Nothing, baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedEmptyJson)
+
       test "Json with null values should fail to decode to FooNested" do
         case decodeJson fooNestedEmptyJsonNull of
           Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> stringify fooNestedEmptyJsonNull)
           _ -> pure unit
+
       test "Empty Json should decode to FooNested'" do
         case decodeJson fooNestedEmptyJson of
           Right (FooNested' { bar: Nothing, baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedEmptyJson)
+
       test "Json with null values should decode to FooNested'" do
         case decodeJson fooNestedEmptyJsonNull of
           Right (FooNested' { bar: Nothing, baz: false }) -> pure unit
@@ -234,14 +243,17 @@ manualRecordDecode = do
         case decodeJson fooNestedBazJson of
           Right (FooNested { bar: Nothing, baz: true }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBazJson)
+
       test "Null 'bar' key should fail to decode to FooNested" do
         case decodeJson fooNestedBazJsonNull of
           Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> stringify fooNestedBazJsonNull)
           _ -> pure unit
+
       test "Missing 'bar' key should decode to FooNested'" do
         case decodeJson fooNestedBazJson of
           Right (FooNested' { bar: Nothing, baz: true }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBazJson)
+
       test "Null 'bar' key should decode to FooNested'" do
         case decodeJson fooNestedBazJsonNull of
           Right (FooNested' { bar: Nothing, baz: true }) -> pure unit
@@ -253,14 +265,17 @@ manualRecordDecode = do
         case decodeJson fooNestedBarJson of
           Right (FooNested { bar: Just [1], baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBarJson)
+
       test "Null 'baz' key should fail to decode to FooNested" do
         case decodeJson fooNestedBarJsonNull of
           Right (FooNested _) -> failure ("Should have failed to decode JSON string: " <> stringify fooNestedBarJsonNull)
           _ -> pure unit
+
       test "Missing 'baz' key should decode to FooNested'" do
         case decodeJson fooNestedBarJson of
           Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBarJson)
+
       test "Null 'baz' key should decode to FooNested'" do
         case decodeJson fooNestedBarJsonNull of
           Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
@@ -272,6 +287,7 @@ manualRecordDecode = do
         case decodeJson fooNestedFullJson of
           Right (FooNested { bar: Just [1], baz: true }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedFullJson)
+
       test "Json should decode to FooNested'" do
         case decodeJson fooNestedFullJson of
           Right (FooNested { bar: Just [1], baz: true }) -> pure unit
@@ -281,6 +297,7 @@ manualRecordDecode = do
     case decodeJson fooJson of
       Right (Foo _) -> pure unit
       Left err -> failure $ printJsonDecodeError err
+
   suite "Test decoding empty record" testEmptyCases
   suite "Test decoding missing 'bar' key" testBarCases
   suite "Test decoding missing 'baz' key" testBazCases
@@ -296,6 +313,7 @@ nonEmptyCheck = do
             <?> ("x = " <> show x <> ", decoded = " <> show decoded)
         Left err ->
           false <?> printJsonDecodeError err
+
   test "Test EncodeJson/DecodeJson on NonEmptyArray" do
     quickCheck \(x :: NonEmptyArray String) ->
       case decodeJson (encodeJson x) of
@@ -304,6 +322,7 @@ nonEmptyCheck = do
             <?> ("x = " <> show x <> ", decoded = " <> show decoded)
         Left err ->
           false <?> printJsonDecodeError err
+
   test "Test EncodeJson/DecodeJson on NonEmpty List" do
     quickCheck \(x :: NonEmpty List String) ->
       case decodeJson (encodeJson x) of
@@ -312,6 +331,7 @@ nonEmptyCheck = do
             <?> ("x = " <> show x <> ", decoded = " <> show decoded)
         Left err ->
           false <?> printJsonDecodeError err
+
   test "Test EncodeJson/DecodeJson on NonEmptyList" do
     quickCheck \(x :: NonEmptyList String) ->
       case decodeJson (encodeJson x) of
@@ -337,28 +357,30 @@ errorMsgCheck = do
     case notBar of
       Left err -> assertEqual { expected: barErr, actual: printJsonDecodeError err }
       _ -> failure "Should have failed to decode"
+
   test "Test that decoding record fails with the proper message" do
     case notBaz of
       Left err -> assertEqual { expected: bazErr, actual: printJsonDecodeError err }
       _ -> failure "Should have failed to decode"
+
   where
   barErr :: String
   barErr =
     joinWith "\n"
-    [ "An error occurred while decoding a JSON value:"
-    , "  At object key 'bar':"
-    , "  Under 'Array':"
-    , "  At array index 1:"
-    , "  Expected value of type 'Number'."
-    ]
+      [ "An error occurred while decoding a JSON value:"
+      , "  At object key 'bar':"
+      , "  Under 'Array':"
+      , "  At array index 1:"
+      , "  Expected value of type 'Number'."
+      ]
 
   bazErr :: String
   bazErr =
     joinWith "\n"
-    [ "An error occurred while decoding a JSON value:"
-    , "  At object key 'baz':"
-    , "  Expected value of type 'Boolean'."
-    ]
+      [ "An error occurred while decoding a JSON value:"
+      , "  At object key 'baz':"
+      , "  Expected value of type 'Boolean'."
+      ]
 
 newtype Foo = Foo
   { bar :: Array Int

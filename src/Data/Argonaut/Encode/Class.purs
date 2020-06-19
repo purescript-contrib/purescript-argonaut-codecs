@@ -112,8 +112,8 @@ instance gEncodeJsonCons
      )
   => GEncodeJson row (RL.Cons field value tail) where
   gEncodeJson row _ = do
-    let sProxy = SProxy :: SProxy field
+    let _field = SProxy :: SProxy field
     FO.insert
-      (reflectSymbol sProxy)
-      (encodeJson $ Record.get sProxy row)
+      (reflectSymbol _field)
+      (encodeJson $ Record.get _field row)
       (gEncodeJson row (RLProxy :: RLProxy tail))

@@ -1,14 +1,13 @@
 -- | Provides operators for a DSL to construct `Json` values:
 -- |
--- | ``` purescript
--- | myJson
--- |  = "key1" := value1
--- |  ~> "key2" :=? value2
--- |  ~>? "key3" := value3
--- |  ~> jsonEmptyObject
+-- | ```purs
+-- | myJson =
+-- |  "key1" := value1
+-- |    ~> "key2" :=? value2
+-- |    ~>? "key3" := value3
+-- |    ~> jsonEmptyObject
 -- | ```
 module Data.Argonaut.Encode.Combinators where
-
 
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
@@ -16,14 +15,16 @@ import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Data.Argonaut.Encode.Encoders as Encoders
 
--- | Creates a `Tuple String Json` entry, representing a key/value pair for an object.
+-- | Creates a `Tuple String Json` entry, representing a key/value pair for 
+-- | an object.
 infix 7 assoc as :=
 
 -- | The named Encoders of the `(:=)` operator.
 assoc :: forall a. EncodeJson a => String -> a -> Tuple String Json
 assoc = Encoders.assoc encodeJson
 
--- | Creates an optional `Tuple String Json` entry, representing an optional key/value pair for an object.
+-- | Creates an optional `Tuple String Json` entry, representing an optional
+-- | key/value pair for an object.
 infix 7 assocOptional as :=?
 
 -- | The named Encoders of the `(:=?)` operator.
