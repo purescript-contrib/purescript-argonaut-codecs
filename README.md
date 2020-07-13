@@ -429,12 +429,10 @@ encodeUserAsArray user = encodeJson [ user.uuid, user.name ]
 You may occasionally be unable to write `EncodeJson` or `DecodeJson` instances for a data type because it requires more information than just `Json` as its argument. For instance, consider this pair of types:
 
 ```purs
-newtype Following
-  = Following Boolean
-
 data Author
-  = Other String Following -- someone else is the author
-  | You                    -- you are the author
+  = Following String    -- you are subscribed to this author
+  | NotFollowing String -- you aren't subscribed to this author
+  | You                 -- you are the author
 
 type BlogPost =
   { title :: String
@@ -456,10 +454,9 @@ decodeJsonAuthor maybeUsername json = do
   following <- obj .: "following"
   case maybeUsername of
     -- user is logged in and is the author
-    Just (Username username)
-      | author == username -> Right You
+    Just (Username username) | author == username -> Right You
     -- user is not the author, or no one is logged in, so use the `following` flag
-    _ -> Right $ Other author $ Following following
+    _ -> if following then Following else NotFollowing $ author
 
 decodeJsonBlogPost :: Maybe Username -> Json -> Either JsonDecodeError BlogPost
 decodeJsonBlogPost username json = do
