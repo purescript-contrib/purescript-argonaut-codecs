@@ -446,7 +446,7 @@ When our application is running we know who the currently-authenticated user is,
 In these cases, unfortunately, you can't write an instance of `DecodeJson` for the data type. You can, however, write `decodeJsonAuthor` and use it without the type class. For instance:
 
 ```purs
-decodeJsonAuthor :: Maybe Username -> Json -> Either String Author
+decodeJsonAuthor :: Maybe Username -> Json -> Either JsonDecodeError Author
 decodeJsonAuthor maybeUsername json = do
   obj <- decodeJson json
   author <- obj .: "author"
@@ -457,9 +457,9 @@ decodeJsonAuthor maybeUsername json = do
       | author == username -> Right You
       -- user is not the author, or no one is logged in, so use the `following` flag
       | otherwise -> Right $ Other author following
-    Nothing -> Left "Missing Username"
+    Nothing -> Left $ Named "Username" MissingValue
 
-decodeJsonBlogPost :: Maybe Username -> Json -> Either String BlogPost
+decodeJsonBlogPost :: Maybe Username -> Json -> Either JsonDecodeError BlogPost
 decodeJsonBlogPost username json = do
   obj <- decodeJson json
   title <- obj .: "title"
