@@ -440,7 +440,7 @@ type BlogPost =
   }
 ```
 
-Our API tells us the author of the blog post is a `String` and whether we follow them is a `Boolean`. This admits more cases than are actually possible -- you can't follow yourself, for example -- so we are more precise and model an `Author` as a sum type.
+Our API sends us the author of the blog post as a string and whether we follow them as a boolean. This admits more cases than are actually possible -- you can't follow yourself, for example -- so we are more precise and model an `Author` as a sum type.
 
 When our application is running we know who the currently-authenticated user is, and we can use that information to determine the `Author` type. That means we can't decode an `Author` from `Json` alone -- we need more information.
 
