@@ -430,9 +430,8 @@ You may occasionally be unable to write `EncodeJson` or `DecodeJson` instances f
 
 ```purs
 data Author
-  = Following String    -- you are subscribed to this author
-  | NotFollowing String -- you aren't subscribed to this author
-  | You                 -- you are the author
+  = Other String Boolean -- someone else is the author
+  | You                  -- you are the author
 
 type BlogPost =
   { title :: String
@@ -440,25 +439,27 @@ type BlogPost =
   }
 ```
 
-Our API tells us the author of the blog post as a string and whether we follow them as a boolean. This admits more cases than are actually possible -- you can't follow yourself, for example -- so we are more precise and model an `Author` as a sum type.
+Our API tells us the author of the blog post is a `String` and whether we follow them is a `Boolean`. This admits more cases than are actually possible -- you can't follow yourself, for example -- so we are more precise and model an `Author` as a sum type.
 
 When our application is running we know who the currently-authenticated user is, and we can use that information to determine the `Author` type. That means we can't decode an `Author` from `Json` alone -- we need more information.
 
 In these cases, unfortunately, you can't write an instance of `DecodeJson` for the data type. You can, however, write `decodeJsonAuthor` and use it without the type class. For instance:
 
 ```purs
-decodeJsonAuthor :: Maybe Username -> Json -> Either JsonDecodeError Author
+decodeJsonAuthor :: Maybe Username -> Json -> Either String Author
 decodeJsonAuthor maybeUsername json = do
   obj <- decodeJson json
   author <- obj .: "author"
   following <- obj .: "following"
-  pure $ case maybeUsername of
+  case maybeUsername of
     -- user is logged in and is the author
-    Just (Username username) | author == username -> You
-    -- user is not the author, or no one is logged in, so use the `following` flag
-    otherwise -> author # if following then Following else NotFollowing
+    Just (Username username)
+      | author == username -> Right You
+      -- user is not the author, or no one is logged in, so use the `following` flag
+      | otherwise -> Right $ Other author following
+    Nothing -> Left "Missing Username"
 
-decodeJsonBlogPost :: Maybe Username -> Json -> Either JsonDecodeError BlogPost
+decodeJsonBlogPost :: Maybe Username -> Json -> Either String BlogPost
 decodeJsonBlogPost username json = do
   obj <- decodeJson json
   title <- obj .: "title"
