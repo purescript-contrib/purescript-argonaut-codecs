@@ -452,11 +452,11 @@ decodeJsonAuthor maybeUsername json = do
   obj <- decodeJson json
   author <- obj .: "author"
   following <- obj .: "following"
-  case maybeUsername of
+  pure $ case maybeUsername of
     -- user is logged in and is the author
-    Just (Username username) | author == username -> Right You
+    Just (Username username) | author == username -> You
     -- user is not the author, or no one is logged in, so use the `following` flag
-    _ -> if following then Following else NotFollowing $ author
+    _ -> author # if following then Following else NotFollowing
 
 decodeJsonBlogPost :: Maybe Username -> Json -> Either JsonDecodeError BlogPost
 decodeJsonBlogPost username json = do
