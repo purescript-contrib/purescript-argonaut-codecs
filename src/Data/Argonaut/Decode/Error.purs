@@ -1,4 +1,4 @@
--- | Originally implemented in: 
+-- | Originally implemented in:
 -- | https://github.com/garyb/purescript-codec-argonaut
 module Data.Argonaut.Decode.Error where
 
@@ -15,6 +15,7 @@ data JsonDecodeError
   | AtKey String JsonDecodeError
   | Named String JsonDecodeError
   | MissingValue
+  | CustomError String
 
 derive instance eqJsonDecodeError :: Eq JsonDecodeError
 derive instance ordJsonDecodeError :: Ord JsonDecodeError
@@ -28,6 +29,7 @@ instance showJsonDecodeError :: Show JsonDecodeError where
     AtKey k e -> "(AtKey " <> show k <> " " <> show e <> ")"
     Named s e -> "(Named " <> show s <> " " <> show e <> ")"
     MissingValue -> "MissingValue"
+    CustomError e -> "(CustomError " <> e <> ")"
 
 -- | Prints a `JsonDecodeError` as a readable error message.
 printJsonDecodeError :: JsonDecodeError -> String
@@ -41,3 +43,4 @@ printJsonDecodeError err =
     AtKey key inner -> "  At object key \'" <> key <> "\':\n" <> go inner
     Named name inner -> "  Under '" <> name <> "':\n" <> go inner
     MissingValue -> "  No value was found."
+    CustomError e -> " " <> e
