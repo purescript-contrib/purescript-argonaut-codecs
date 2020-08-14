@@ -2,6 +2,7 @@
 !.gitignore
 !.github
 !.eslintrc.json
+!.editorconfig
 
 # Dependencies
 bower_components
