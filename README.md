@@ -15,6 +15,8 @@ You may also be interested in these other libraries from the Argonaut ecosystem:
 - [purescript-argonaut-generic](https://github.com/purescript-contrib/purescript-argonaut-generic) supports generic encoding and decoding for any type with a `Generic` instance
 - [purescript-codec-argonaut](https://github.com/garyb/purescript-codec-argonaut) supports an alternative approach for codecs, which are based on profunctors instead of type classes
 
+The quick start will get you up and running with the basics of `argonaut-codecs`. For a deeper dive, please see [the full documentation for this library](./docs), which includes an in-depth tutorial.
+
 ## Installation
 
 Install with [Spago](https://github.com/purescript/spago):
@@ -69,11 +71,11 @@ Left "An error occurred while decoding a JSON value:\n  At object key 'age':\n  
 
 ## Documentation
 
-Contrib library documentation is stored in a few places:
+You can find `argonaut-codecs` documentation in a few places:
 
 1. Module documentation is [published on Pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs).
 2. The tutorial and other written documentation is kept in [the docs directory](./docs).
-3. Usage examples can be found in [the test suite](./test)
+3. Additional usage examples can be found in [the PureScript Cookbook](https://github.com/JordanMartinez/purescript-cookbook)
 
 If you get stuck, there are several ways to get help:
 
