@@ -1,51 +1,37 @@
-# Contribution
+# Contributing
 
-Thank you for contributing to `purescript-argonaut-codecs`!
+Thanks for your interest in contributing to argonaut-codecs! This file is a short, sweet introduction to contributing to this project. We ask that all new contributors read it before their first contribution to make sure we can get your work merged.
 
-Following these guidelines helps ensure we're able to carefully consider your contribution and help you finalize your pull request. Your time (like ours) is valuable, and we try to at least provide constructive feedback on every contribution.
+## Getting Started
 
-### Contributions we love
-`purescript-argonaut-codecs` is an open-source library and we love to receive contributions. There are many ways you can contribute:
+### Do I belong here?
 
-* Help expand our test coverage
-* Help fix open issues, even if that simply means adding a helpful comment
-* Help push along open pull requests that need more work to be complete
-* Improve or add new usage examples to better demonstrate how to use the library in real-world scenarios
-* Update documentation and tutorials to be easier to understand, more comprehensive, and above all -- up to date!
+Everyone is welcome! People of all experience levels can join, begin contributing, and feel comfortable and safe making mistakes. People of all backgrounds belong here so long as they treat others with dignity and respect and do not harass, belittle, or insult others.
 
-### Contributions we should discuss
-Some contributions will take some discussion before we accept an update to the project. If your contribution includes one of the below examples (or seems to be reasonably similar), please consider reaching out to us before putting in a lot of work to build the feature. We're active on the [PureScript user forum](https://discourse.purescript.org/) and the [functional programming Slack](https://functionalprogramming.slack.com/) community (new? [use this link to join](https://fpchat-invite.herokuapp.com/)!). For feature requests, feel free to open an issue with a tag.
+### What is the correct way to ask a question?
 
-* New features and functions that will change the library's public API
-* New tutorials (while we love seeing new tutorials, we won't always be able to feature them in the readme)
+Feel free to ask questions by [opening an issue](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues)! You can also ask questions on the [PureScript Discourse](https://discourse.purescript.org), or on the [Functional Programming Slack](https://functionalprogramming.slack.com) ([join](https://fpchat-invite.herokuapp.com)!) in the `#purescript` and `#purescript-beginners` channels.
 
-# Ground Rules
+### I'd like to help, how do I pick something to work on?
 
-We have a small set of quality-of-life guidelines for contributing to `purescript-argonaut-codecs`. These include:
+Any [open issue](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues) that is not assigned to anyone is good to work on! If it's your first time contributing it's probably best to pick an issue marked [good first issue](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue). You can also search for issues marked [help-wanted](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted).
 
-* All pull requests must pass continuous integration.
-* If you are adding new functionality, you should provide tests and documentation for your code. If you're fixing an existing bug, please provide a failing test case your patch solves.
-* If possible, please avoid requiring new dependencies.
+The easiest way you can help is by contributing documentation (issues marked [document me](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues?q=is%3Aissue+is%3Aopen+label%3A%22document+me). If you'd like to contribute documentation, we suggest [reading about the four kinds of documentation](https://documentation.divio.com).
 
-### Filing issues
-If you have a general question about the project, it's best to ask on the [PureScript user forum](https://discourse.purescript.org/) or the [functional programming Slack](https://functionalprogramming.slack.com/) than to open a new issue. If you have run into a bug in the project, then please do open an issue! When you do, we ask that you follow a few steps which are outlined in our issues template. The gist of it is here:
+Your contribution can be as small as copy-pasting some instructions from an issue into the documentation! Everything is welcome.
 
-* Verify the problem is indeed with `purescript-argonaut-codecs` (not with Pulp, Bower, or PureScript);
-* Record what versions you are using for PureScript and `purescript-argonaut-codecs`
-* Describe the issue with steps to reproduce (as much as you are able). A minimal reproducible example is the absolute best case scenario.
+## Developing argonaut-codecs
 
-We promise to address the issue as soon as we can.
+All `purescript-contrib` libraries use recent versions of [PureScript](https://github.com/purescript/purescript), [Spago](https://github.com/purescript/spago), and [psa](https://github.com/natefaubion/purescript-psa). Any additional development dependencies can be installed via NPM and are listed in the `package.json` file for the repository.
 
-### Suggesting features or enhancements
-We love to hear about ways we could make  better. If you're wishing for a feature that doesn't exist in `purescript-argonaut-codecs`, you're probably not alone; there are bound to be others with similar needs. Please feel free to open an issue on GitHub that describes:
+### Proposing changes
 
-* the feature you would like to see
-* why you need it
-* how it should work
+If you would like to contribute code, tests, or documentation, please feel free to open a pull request for small changes. For large changes we recommend you first open an issue to propose your change and ensure that the maintainers are on board before you spend time implementing the change. We want to respect your time and effort. We can also assign the issue to you if you would like to make sure you're the one to work on it.
 
-We promise to review your issue, but we aren't always able to accommodate all requests. It helps if you're able to contribute to the implementation, too!
+### Merging changes
 
-### Code reviews
-The core team looks at pull requests weekly, at which point we will review your code, ensure it meets our ground rules and fits with the philosophy of the project, and -- if necessary -- provide constructive feedback. As soon as at least one member of the team has signed off on your pull request, we will merge your contribution.
+All changes must happen through a pull request. Everyone with commit access can merge changes, though by convention we like to wait for two approvals for non-trivial changes. All pull requests must pass continuous integration; if the change adds new code we may also ask that you add a test.
 
-If you opened a pull request and we need to ask a few questions, we expect responses within a month. After that we may close the pull request if it isn't showing any activity to keep things manageable.
+## How do I get the "commit bit"?
+
+If you'd like to take part in maintaining argonaut-codecs, just ask! We hand out the commit bit to folks who display sustained interest in the project. You can ask directly (for example: on Slack or via a DM on Discourse) or by opening an issue -- whichever you prefer!
