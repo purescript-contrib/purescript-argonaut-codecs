@@ -1,7 +1,8 @@
-/.*
-!/.gitignore
-!/.github
-!/.travis.yml
+.*
+!.gitignore
+!.github
+!.eslintrc.json
+!.editorconfig
 
 # Dependencies
 bower_components
@@ -9,9 +10,7 @@ node_modules
 
 # Generated files
 output
-dce-output
 generated-docs
 
-# Lockfiles
-package-lock.json
+# Non-NPM lockfiles
 *.lock
