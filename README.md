@@ -1,9 +1,8 @@
 # Argonaut Codecs
 
-[![CI](https://github.com/purescript-contrib/purescript-argonaut-codecs/workflows/CI/badge.svg?branch=master)](https://github.com/purescript-contrib/purescript-argonaut-codecs/actions?query=workflow%3ACI+branch%3Amaster)
+[![CI](https://github.com/purescript-contrib/purescript-argonaut-codecs/workflows/CI/badge.svg?branch=main)](https://github.com/purescript-contrib/purescript-argonaut-codecs/actions?query=workflow%3ACI+branch%3Amain)
 [![Release](http://img.shields.io/github/release/purescript-contrib/purescript-argonaut-codecs.svg)](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases)
 [![Pursuit](http://pursuit.purescript.org/packages/purescript-argonaut-codecs/badge)](http://pursuit.purescript.org/packages/purescript-argonaut-codecs)
-[![Maintainer: garyb](https://img.shields.io/badge/maintainer-garyb-teal.svg)](http://github.com/garyb)
 [![Maintainer: thomashoneyman](https://img.shields.io/badge/maintainer-thomashoneyman-teal.svg)](http://github.com/thomashoneyman)
 
 [Argonaut](https://github.com/purescript-contrib/purescript-argonaut) is a collection of libraries for working with JSON in PureScript. `argonaut-codecs` provides codecs based on the `EncodeJson` and `DecodeJson` type classes, along with instances for common data types and combinators for encoding and decoding `Json` values.
@@ -19,13 +18,13 @@ The quick start will get you up and running with the basics of `argonaut-codecs`
 
 ## Installation
 
-Install with [Spago](https://github.com/purescript/spago):
+Install `argonaut-codecs` with [Spago](https://github.com/purescript/spago):
 
 ```sh
 spago install argonaut-codecs
 ```
 
-or install as part of the [Argonaut](https://github.com/purescript-contrib/purescript-argonaut) bundle:
+or install it as part of the [Argonaut](https://github.com/purescript-contrib/purescript-argonaut) bundle:
 
 ```sh
 spago install argonaut
@@ -71,11 +70,11 @@ Left "An error occurred while decoding a JSON value:\n  At object key 'age':\n  
 
 ## Documentation
 
-You can find `argonaut-codecs` documentation in a few places:
+`argonaut-codecs` documentation is stored in a few places:
 
 1. Module documentation is [published on Pursuit](https://pursuit.purescript.org/packages/purescript-argonaut-codecs).
-2. The tutorial and other written documentation is kept in [the docs directory](./docs).
-3. Additional usage examples can be found in [the PureScript Cookbook](https://github.com/JordanMartinez/purescript-cookbook)
+2. Written documentation and [the changelog](./docs/CHANGELOG.md) are kept in [the docs directory](./docs).
+3. Usage examples can be found in [the test suite](./test).
 
 If you get stuck, there are several ways to get help:
 
@@ -86,7 +85,7 @@ If you get stuck, there are several ways to get help:
 
 You can contribute to `argonaut-codecs` in several ways:
 
-1. If you encounter a problem or have a question, please [open an issue](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues) issue. We'll do our best to work with you to resolve or answer it.
+1. If you encounter a problem or have a question, please [open an issue](https://github.com/purescript-contrib/purescript-argonaut-codecs/issues). We'll do our best to work with you to resolve or answer it.
 
 2. If you would like to contribute code, tests, or documentation, please [read the contributor guide](./.github/CONTRIBUTING.md). It's a short, helpful introduction to contributing to this library, including development instructions.
 

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   build:
@@ -12,7 +12,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: thomashoneyman/setup-purescript@main
+
+      - name: Set up a PureScript toolchain
+        uses: purescript-contrib/setup-purescript@main
 
       - name: Cache PureScript dependencies
         uses: actions/cache@v2
@@ -22,8 +24,11 @@ jobs:
             .spago
             output
 
+      - name: Install dependencies
+        run: spago install
+
       - name: Build source
-        run: spago build
+        run: spago build --no-install --purs-args '--censor-lib --strict'
 
       - name: Run tests
         run: spago test --no-install

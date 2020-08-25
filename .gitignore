@@ -1,16 +1,7 @@
 .*
 !.gitignore
 !.github
-!.eslintrc.json
 !.editorconfig
 
-# Dependencies
-bower_components
-node_modules
-
-# Generated files
 output
 generated-docs
-
-# Non-NPM lockfiles
-*.lock

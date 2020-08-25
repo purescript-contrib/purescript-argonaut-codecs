@@ -2,12 +2,12 @@
 name: Change request
 about: Propose an improvement to this library
 title: ""
-labels: enhancement
+labels: ""
 assignees: ""
 ---
 
 **Is your change request related to a problem? Please describe.**
-A clear and concise description of what the problem is.
+A clear and concise description of the problem.
 
 Examples:
 

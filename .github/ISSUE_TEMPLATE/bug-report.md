@@ -7,7 +7,7 @@ assignees: ""
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear and concise description of the bug.
 
 **To Reproduce**
 A minimal code example (preferably a runnable example on [Try PureScript](https://try.purescript.org)!) or steps to reproduce the issue.
