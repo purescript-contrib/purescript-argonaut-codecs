@@ -75,7 +75,7 @@ We can automatically decode `Json` using the `DecodeJson` type class ([pursuit](
 Every type within `User` has an instance for `DecodeJson`, which means we can use the `decodeJson` function to try to decode a `Json` value into our type. Once again, integer and string values will be decoded directly from the `Json`, but containing types like `Record` and `Maybe` will also require instances for the types they contain.
 
 ```purs
-decodeJson :: DecodeJson a => Json -> Either String a
+decodeJson :: DecodeJson a => Json -> Either JsonDecodeError a
 ```
 
 > Tip: To parse a JSON string as a `Json` value, you can use the `parseJson` function (which can fail). If you are sure you have valid JSON, then consider writing it in an FFI file and foreign importing it as `Json` as described in the [`argonaut-core` documentation](https://github.com/purescript-contrib/purescript-argonaut-core#introducing-json-values).
