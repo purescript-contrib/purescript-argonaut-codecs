@@ -10,6 +10,8 @@ New features:
 
 Bugfixes:
 
+* Changed type in docs of `decodeJson` from `forall a. DecodeJson a => Json -> Either String a` to `forall a. DecodeJson a => Json -> Either JsonDecodeError a`.
+
 Other improvements:
 
 ## [0.0.0] - 2020-01-01
