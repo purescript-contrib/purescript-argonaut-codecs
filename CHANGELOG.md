@@ -181,3 +181,4 @@ Updated dependencies
 
 ## [v0.1.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.1.0) - 2015-07-13
 
+- Initial release
