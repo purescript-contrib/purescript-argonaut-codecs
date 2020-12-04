@@ -13,14 +13,14 @@ import Data.Maybe (Maybe)
 import Data.NonEmpty (NonEmpty)
 import Data.Set as S
 import Data.String (CodePoint)
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple)
 import Foreign.Object as FO
 import Prelude (class Ord, Unit, Void, identity, ($))
 import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
-import Type.Data.RowList (RLProxy(..))
+import Type.Proxy (Proxy(..))
 
 class EncodeJson a where
   encodeJson :: a -> Json
@@ -96,10 +96,10 @@ instance encodeRecord
      , RL.RowToList row list
      )
   => EncodeJson (Record row) where
-  encodeJson rec = fromObject $ gEncodeJson rec (RLProxy :: RLProxy list)
+  encodeJson rec = fromObject $ gEncodeJson rec (Proxy :: Proxy list)
 
-class GEncodeJson (row :: # Type) (list :: RL.RowList) where
-  gEncodeJson :: Record row -> RLProxy list -> FO.Object Json
+class GEncodeJson (row :: Row Type) (list :: RL.RowList Type) where
+  gEncodeJson :: forall proxy. Record row -> proxy list -> FO.Object Json
 
 instance gEncodeJsonNil :: GEncodeJson row RL.Nil where
   gEncodeJson _ _ = FO.empty
@@ -112,8 +112,8 @@ instance gEncodeJsonCons
      )
   => GEncodeJson row (RL.Cons field value tail) where
   gEncodeJson row _ = do
-    let _field = SProxy :: SProxy field
+    let _field = Proxy :: Proxy field
     FO.insert
       (reflectSymbol _field)
       (encodeJson $ Record.get _field row)
-      (gEncodeJson row (RLProxy :: RLProxy tail))
+      (gEncodeJson row (Proxy :: Proxy tail))

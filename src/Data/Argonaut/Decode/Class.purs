@@ -15,14 +15,14 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty)
 import Data.Set as S
 import Data.String (CodePoint)
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple)
 import Foreign.Object as FO
 import Prelude (class Ord, Unit, Void, bind, ($), (<<<))
 import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
-import Type.Data.RowList (RLProxy(..))
+import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
   decodeJson :: Json -> Either JsonDecodeError a
@@ -97,11 +97,11 @@ instance decodeRecord
   => DecodeJson (Record row) where
   decodeJson json =
     case toObject json of
-      Just object -> gDecodeJson object (RLProxy :: RLProxy list)
+      Just object -> gDecodeJson object (Proxy :: Proxy list)
       Nothing -> Left $ TypeMismatch "Object"
 
-class GDecodeJson (row :: # Type) (list :: RL.RowList) | list -> row where
-  gDecodeJson :: FO.Object Json -> RLProxy list -> Either JsonDecodeError (Record row)
+class GDecodeJson (row :: Row Type) (list :: RL.RowList Type) | list -> row where
+  gDecodeJson :: forall proxy. FO.Object Json -> proxy list -> Either JsonDecodeError (Record row)
 
 instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
   gDecodeJson _ _ = Right {}
@@ -115,14 +115,14 @@ instance gDecodeJsonCons
      )
   => GDecodeJson row (RL.Cons field value tail) where
   gDecodeJson object _ = do
-    let 
-      _field = SProxy :: SProxy field 
+    let
+      _field = Proxy :: Proxy field
       fieldName = reflectSymbol _field
 
     case FO.lookup fieldName object of
       Just jsonVal -> do
         val <- lmap (AtKey fieldName) <<< decodeJson $ jsonVal
-        rest <- gDecodeJson object (RLProxy :: RLProxy tail)
+        rest <- gDecodeJson object (Proxy :: Proxy tail)
         Right $ Record.insert _field val rest
 
       Nothing ->
