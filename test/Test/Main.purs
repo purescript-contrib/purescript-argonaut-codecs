@@ -72,6 +72,7 @@ main = flip runReaderT 0 do
   suite "Encode/Decode NonEmpty Check" nonEmptyCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
   suite "Encode/Decode Record Checks" encodeDecodeRecordCheck
+  suite "Decode Optional Field Check" decodeOptionalFieldCheck
   suite "Combinators Checks" combinatorsCheck
   suite "Manual Combinators Checks" manualRecordDecode
   suite "Error Message Checks" errorMsgCheck
@@ -90,6 +91,27 @@ encodeDecodeRecordCheck = do
     rec <- genTestRecord
     let redecoded = decodeJson (encodeJson rec)
     pure $ Right rec == redecoded <?> (show redecoded <> " /= Right " <> show rec)
+
+decodeOptionalFieldCheck :: Test
+decodeOptionalFieldCheck = do
+  barMissingJson <- jsonParser' """{ }"""
+  barNullJson <- jsonParser' """{ "bar": null }"""
+  barPresentJson <- jsonParser' """{ "bar": [] }"""
+
+  test "Decode missing field" do
+    case decodeJson barMissingJson of
+      Right ({ bar: Nothing } :: FooRecord) -> pure unit
+      _ -> failure ("Failed to properly decode JSON string: " <> stringify barMissingJson)
+
+  test "Decode null field" do
+    case decodeJson barNullJson of
+      Right ({ bar: Nothing } :: FooRecord) -> pure unit
+      _ -> failure ("Failed to properly decode JSON string: " <> stringify barNullJson)
+
+  test "Decode present field" do
+    case decodeJson barPresentJson of
+      Right ({ bar: Just [] } :: FooRecord) -> pure unit
+      _ -> failure ("Failed to properly decode JSON string: " <> stringify barPresentJson)
 
 genTestJson :: Gen Json
 genTestJson = resize 5 genJson
@@ -417,3 +439,7 @@ instance decodeJsonFooNested' :: DecodeJson FooNested' where
     bar <- x .:? "bar"
     baz <- x .:? "baz" .!= false
     pure $ FooNested' { bar, baz }
+
+type FooRecord =
+  { bar :: Maybe (Array Int)
+  }

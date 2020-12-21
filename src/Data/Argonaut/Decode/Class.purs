@@ -18,7 +18,7 @@ import Data.String (CodePoint)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple)
 import Foreign.Object as FO
-import Prelude (class Ord, Unit, Void, bind, ($), (<<<))
+import Prelude (class Ord, Unit, Void, bind, ($), (<$>))
 import Prim.Row as Row
 import Prim.RowList as RL
 import Record as Record
@@ -107,7 +107,7 @@ instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
   gDecodeJson _ _ = Right {}
 
 instance gDecodeJsonCons
-  :: ( DecodeJson value
+  :: ( DecodeJsonField value
      , GDecodeJson rowTail tail
      , IsSymbol field
      , Row.Cons field value rowTail row
@@ -118,12 +118,27 @@ instance gDecodeJsonCons
     let
       _field = Proxy :: Proxy field
       fieldName = reflectSymbol _field
+      fieldValue = FO.lookup fieldName object
 
-    case FO.lookup fieldName object of
-      Just jsonVal -> do
-        val <- lmap (AtKey fieldName) <<< decodeJson $ jsonVal
+    case decodeJsonField fieldValue of
+      Just fieldVal -> do
+        val <- lmap (AtKey fieldName) fieldVal
         rest <- gDecodeJson object (Proxy :: Proxy tail)
         Right $ Record.insert _field val rest
 
       Nothing ->
         Left $ AtKey fieldName MissingValue
+
+class DecodeJsonField a where
+  decodeJsonField :: Maybe Json -> Maybe (Either JsonDecodeError a)
+
+instance decodeFieldMaybe
+  :: DecodeJson a
+  => DecodeJsonField (Maybe a) where
+  decodeJsonField Nothing = Just $ Right Nothing
+  decodeJsonField (Just j) = Just $ decodeJson j
+
+else instance decodeFieldId
+  :: DecodeJson a
+  => DecodeJsonField a where
+  decodeJsonField j = decodeJson <$> j
