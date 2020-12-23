@@ -15,6 +15,8 @@ import Data.List (List, fromFoldable)
 import Data.List as L
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty as NEL
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.Map as M
 import Data.Maybe (maybe, Maybe(..))
 import Data.NonEmpty (NonEmpty, (:|))
@@ -83,6 +85,14 @@ decodeInt = note (TypeMismatch "Integer") <<< fromNumber <=< decodeNumber
 
 decodeString :: Json -> Either JsonDecodeError String
 decodeString = caseJsonString (Left $ TypeMismatch "String") Right
+
+decodeNonEmptyString :: Json -> Either JsonDecodeError NonEmptyString
+decodeNonEmptyString json =
+  note (Named "NonEmptyString" $ UnexpectedValue json)
+    =<< map (NonEmptyString.fromString) (decodeString json)
+
+decodeNonempty :: Json -> Either JsonDecodeError String
+decodeNonempty = map NonEmptyString.toString <<< decodeNonEmptyString
 
 decodeNonEmpty_Array
   :: forall a

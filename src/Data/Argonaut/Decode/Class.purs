@@ -10,6 +10,7 @@ import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
+import Data.String.NonEmpty (NonEmptyString)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty)
@@ -53,6 +54,9 @@ instance decodeJsonInt :: DecodeJson Int where
 
 instance decodeJsonString :: DecodeJson String where
   decodeJson = decodeString
+
+instance decodeJsonNonEmptyString :: DecodeJson NonEmptyString where
+  decodeJson = decodeNonEmptyString
 
 instance decodeJsonJson :: DecodeJson Json where
   decodeJson = Right
