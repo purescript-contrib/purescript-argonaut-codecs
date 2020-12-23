@@ -25,14 +25,14 @@ import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
-decodeIdentity 
+decodeIdentity
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (Identity a)
 decodeIdentity decoder json = Identity <$> decoder json
 
-decodeMaybe 
+decodeMaybe
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
@@ -41,26 +41,26 @@ decodeMaybe decoder json
   | isNull json = pure Nothing
   | otherwise = Just <$> decoder json
 
-decodeTuple 
+decodeTuple
   :: forall a b
-   . (Json -> Either JsonDecodeError a) 
+   . (Json -> Either JsonDecodeError a)
   -> (Json -> Either JsonDecodeError b)
-  -> Json 
+  -> Json
   -> Either JsonDecodeError (Tuple a b)
 decodeTuple decoderA decoderB json = decodeArray Right json >>= f
   where
   f :: Array Json -> Either JsonDecodeError (Tuple a b)
-  f = case _ of 
+  f = case _ of
     [a, b] -> Tuple <$> decoderA a <*> decoderB b
     _ -> Left $ TypeMismatch "Tuple"
 
-decodeEither 
+decodeEither
   :: forall a b
    . (Json -> Either JsonDecodeError a)
   -> (Json -> Either JsonDecodeError b)
   -> Json
   -> Either JsonDecodeError (Either a b)
-decodeEither decoderA decoderB json = 
+decodeEither decoderA decoderB json =
   lmap (Named "Either") $ decodeJObject json >>= \obj -> do
     tag <- note (AtKey "tag" MissingValue) $ FO.lookup "tag" obj
     val <- note (AtKey "value" MissingValue) $ FO.lookup "value" obj
@@ -84,61 +84,61 @@ decodeInt = note (TypeMismatch "Integer") <<< fromNumber <=< decodeNumber
 decodeString :: Json -> Either JsonDecodeError String
 decodeString = caseJsonString (Left $ TypeMismatch "String") Right
 
-decodeNonEmpty_Array 
+decodeNonEmpty_Array
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (NonEmpty Array a)
-decodeNonEmpty_Array decoder = 
-  lmap (Named "NonEmpty Array") 
-    <<< traverse decoder 
-    <=< map (\x -> x.head :| x.tail) 
-    <<< note (TypeMismatch "NonEmpty Array") 
+decodeNonEmpty_Array decoder =
+  lmap (Named "NonEmpty Array")
+    <<< traverse decoder
+    <=< map (\x -> x.head :| x.tail)
+    <<< note (TypeMismatch "NonEmpty Array")
     <<< Arr.uncons
     <=< decodeJArray
 
-decodeNonEmptyArray 
+decodeNonEmptyArray
   :: forall a
    . (Json -> Either JsonDecodeError a)
-  -> Json 
+  -> Json
   -> Either JsonDecodeError (NonEmptyArray a)
 decodeNonEmptyArray decoder =
   lmap (Named "NonEmptyArray")
-    <<< traverse decoder 
+    <<< traverse decoder
     <=< map (\x -> NEA.cons' x.head x.tail)
-    <<< note (TypeMismatch "NonEmptyArray") 
+    <<< note (TypeMismatch "NonEmptyArray")
     <<< Arr.uncons
     <=< decodeJArray
 
-decodeNonEmpty_List 
+decodeNonEmpty_List
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (NonEmpty List a)
 decodeNonEmpty_List decoder =
   lmap (Named "NonEmpty List")
-    <<< traverse decoder 
+    <<< traverse decoder
     <=< map (\x -> x.head :| x.tail)
     <<< note (TypeMismatch "NonEmpty List")
     <<< L.uncons
     <=< map (map fromFoldable) decodeJArray
 
-decodeNonEmptyList 
+decodeNonEmptyList
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (NonEmptyList a)
 decodeNonEmptyList decoder =
   lmap (Named "NonEmptyList")
-    <<< traverse decoder 
+    <<< traverse decoder
     <=< map (\x -> NEL.cons' x.head x.tail)
     <<< note (TypeMismatch "NonEmptyList")
     <<< L.uncons
     <=< map (map fromFoldable) decodeJArray
 
 decodeCodePoint :: Json -> Either JsonDecodeError CodePoint
-decodeCodePoint json = 
-  note (Named "CodePoint" $ UnexpectedValue json) 
+decodeCodePoint json =
+  note (Named "CodePoint" $ UnexpectedValue json)
     =<< map (codePointAt 0) (decodeString json)
 
 decodeForeignObject
@@ -147,47 +147,47 @@ decodeForeignObject
   -> Json
   -> Either JsonDecodeError (FO.Object a)
 decodeForeignObject decoder =
-  lmap (Named "ForeignObject") 
-    <<< traverse decoder 
+  lmap (Named "ForeignObject")
+    <<< traverse decoder
     <=< decodeJObject
 
-decodeArray 
+decodeArray
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (Array a)
 decodeArray decoder =
   lmap (Named "Array")
-    <<< traverseWithIndex (\i -> lmap (AtIndex i) <<< decoder) 
+    <<< traverseWithIndex (\i -> lmap (AtIndex i) <<< decoder)
     <=< decodeJArray
 
-decodeList 
+decodeList
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (List a)
 decodeList decoder =
   lmap (Named "List")
-    <<< traverse decoder 
+    <<< traverse decoder
     <=< map (map fromFoldable) decodeJArray
 
-decodeSet 
+decodeSet
   :: forall a
-   . Ord a 
+   . Ord a
   => (Json -> Either JsonDecodeError a)
   -> Json
   -> Either JsonDecodeError (S.Set a)
-decodeSet decoder = 
+decodeSet decoder =
   map (S.fromFoldable :: List a -> S.Set a) <<< decodeList decoder
 
-decodeMap 
+decodeMap
   :: forall a b
-   . Ord a 
+   . Ord a
   => (Json -> Either JsonDecodeError a)
   -> (Json -> Either JsonDecodeError b)
   -> Json
   -> Either JsonDecodeError (M.Map a b)
-decodeMap decoderA decoderB = 
+decodeMap decoderA decoderB =
   map (M.fromFoldable :: List (Tuple a b) -> M.Map a b)
     <<< decodeList (decodeTuple decoderA decoderB)
 
@@ -200,7 +200,7 @@ decodeJArray = note (TypeMismatch "Array") <<< toArray
 decodeJObject :: Json -> Either JsonDecodeError (FO.Object Json)
 decodeJObject = note (TypeMismatch "Object") <<< toObject
 
-getField 
+getField
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> FO.Object Json
@@ -212,7 +212,7 @@ getField decoder obj str =
     (lmap (AtKey str) <<< decoder)
     (FO.lookup str obj)
 
-getFieldOptional 
+getFieldOptional
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> FO.Object Json
@@ -223,7 +223,7 @@ getFieldOptional decoder obj str =
   where
   decode = lmap (AtKey str) <<< decoder
 
-getFieldOptional' 
+getFieldOptional'
   :: forall a
    . (Json -> Either JsonDecodeError a)
   -> FO.Object Json
@@ -232,8 +232,8 @@ getFieldOptional'
 getFieldOptional' decoder obj str =
   maybe (pure Nothing) decode (FO.lookup str obj)
   where
-  decode json = 
-    if isNull json then 
+  decode json =
+    if isNull json then
       pure Nothing
-    else 
+    else
       Just <$> (lmap (AtKey str) <<< decoder) json
