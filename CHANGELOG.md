@@ -7,6 +7,7 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes (😱!!!):
 
 New features:
+- 2020-12-23: Per #91 - add decoders for NonEmptyString and add decodeNonempty function
 
 Bugfixes:
 
