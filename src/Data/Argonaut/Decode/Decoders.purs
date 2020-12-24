@@ -91,9 +91,6 @@ decodeNonEmptyString json =
   note (Named "NonEmptyString" $ UnexpectedValue json)
     =<< map (NonEmptyString.fromString) (decodeString json)
 
-decodeNonempty :: Json -> Either JsonDecodeError String
-decodeNonempty = map NonEmptyString.toString <<< decodeNonEmptyString
-
 decodeNonEmpty_Array
   :: forall a
    . (Json -> Either JsonDecodeError a)
