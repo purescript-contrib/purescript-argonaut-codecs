@@ -15,7 +15,7 @@ import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Data.Argonaut.Encode.Encoders as Encoders
 
--- | Creates a `Tuple String Json` entry, representing a key/value pair for 
+-- | Creates a `Tuple String Json` entry, representing a key/value pair for
 -- | an object.
 infix 7 assoc as :=
 

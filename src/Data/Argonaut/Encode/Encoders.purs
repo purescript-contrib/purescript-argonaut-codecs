@@ -88,8 +88,8 @@ encodeSet :: forall a. Ord a => (a -> Json) -> S.Set a -> Json
 encodeSet encoder = encodeList encoder <<< (S.toUnfoldable :: S.Set a -> List a)
 
 encodeMap :: forall a b. Ord a => (a -> Json) -> (b -> Json) -> M.Map a b -> Json
-encodeMap encoderA encoderB = 
-  encodeList (encodeTuple encoderA encoderB) 
+encodeMap encoderA encoderB =
+  encodeList (encodeTuple encoderA encoderB)
     <<< (M.toUnfoldable :: M.Map a b -> List (Tuple a b))
 
 encodeVoid :: Void -> Json
@@ -113,6 +113,6 @@ extend encoder (Tuple k v) =
 
 -- | The named Encoders of the `(~>?)` operator.
 extendOptional :: forall a. (a -> Json) -> Maybe (Tuple String Json) -> a -> Json
-extendOptional encoder = case _ of 
+extendOptional encoder = case _ of
   Just kv -> extend encoder kv
   Nothing -> encoder

@@ -1,4 +1,4 @@
--- | Originally implemented in: 
+-- | Originally implemented in:
 -- | https://github.com/garyb/purescript-codec-argonaut
 module Data.Argonaut.Decode.Error where
 
