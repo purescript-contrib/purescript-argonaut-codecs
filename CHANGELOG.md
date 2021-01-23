@@ -5,13 +5,18 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes (😱!!!):
+- Added support for PureScript 0.14 and dropped support for all previous versions (#90, #96)
 
 New features:
-- 2020-12-23: Per #91 - add decoders for NonEmptyString and add decodeNonempty function
+- Added decoders for `NonEmptyString` and added a new `decodeNonempty` function (#94)
 
 Bugfixes:
 
 Other improvements:
+- Fixed a typo in the documentation in which `String` was still used as the error type instead of `JsonDecodeError` (#88)
+- Added minor clarifications to multi-arg example (#84)
+- Changed default branch to `main` from `master`
+- Updated to comply with Contributors library guidelines by adding new issue and pull request templates, updating documentation, and migrating to Spago for local development and CI (#86, #89)
 
 ## [v7.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v7.0.0) - 2020-06-19
 
@@ -54,58 +59,58 @@ Implemented in #81.
 
 This release includes two small improvements to the library:
 
-* Adds new instances for `NonEmptyArray` and `NonEmptyList` (#61) and `Identity` (#54)
-* Elaborates errors produced with the generic instance for records (#72)
+- Added new instances for `NonEmptyArray` and `NonEmptyList` (#61) and `Identity` (#54)
+- Elaborated errors produced with the generic instance for records (#72)
 
-As well as a new tutorial for the library (#62)
+As well as a new tutorial for the library (#62).
 
 ## [v6.0.2](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v6.0.2) - 2019-05-06
 
-Fixed associativity of a type annotation in advance of new `purs` version
+- Fixed associativity of a type annotation in advance of new `purs` version
 
 ## [v6.0.1](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v6.0.1) - 2019-03-24
 
-Fixes a typo in documentation (@JamieBallingall)
+- Fixed a typo in documentation (@JamieBallingall)
 
 ## [v6.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v6.0.0) - 2019-03-05
 
-Updated dependencies
+- Updated dependencies
 
 ## [v5.1.3](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v5.1.3) - 2019-03-01
 
-Uses the `elaborateFailure` function in `getFieldOptional'` for more descriptive error messages (@LucianU)
+- Updated `getFieldOptional'` to use the `elaborateFailure` helper to produce more descriptive error messages (@LucianU)
 
 ## [v5.1.2](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v5.1.2) - 2019-01-28
 
-Fixed a typo in the `getFieldOptional` docs (@Jwhiles)
+- Fixed a typo in the `getFieldOptional` docs (@Jwhiles)
 
 ## [v5.1.1](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v5.1.1) - 2019-01-04
 
-- Bumps minor dependencies (@thomashoneyman)
-- Adds instances for `Set` (@bradediger)
+- Bumped minor dependencies (@thomashoneyman)
+- Added instances for `Set` (@bradediger)
 
 ## [v5.1.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v5.1.0) - 2018-11-24
 
-Update combinators and operators to better reflect the usage pattern of Aeson, providing deprecation warnings for the old combinators (@davezuch)
+- Updated combinators and operators to better reflect the usage pattern of Aeson, providing deprecation warnings for the old combinators (@davezuch)
 
 ## [v5.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v5.0.0) - 2018-11-09
 
-Adds support for encoding and decoding record types (@elliotdavies)
+- Added support for encoding and decoding record types (@elliotdavies)
 
 ## [v4.0.2](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v4.0.2) - 2018-06-27
 
-- Adds better error messages (@crcornwell)
+- Added better error messages (@crcornwell):
   - Tells you which index did not exist if you fail to access an array
   - Tells you which key did not exist if you fail to access an object
 
 ## [v4.0.1](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v4.0.1) - 2018-06-22
 
-- Adds metadata including contributor guidelines
-- Pushes latest release to Pursuit
+- Added metadata including contributor guidelines
+- Pushed latest release to Pursuit
 
 ## [v4.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v4.0.0) - 2018-06-04
 
-Updates for 0.12
+- Updated for PureScript 0.12
 
 ## [v3.3.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v3.3.0) - 2018-03-15
 
@@ -162,19 +167,19 @@ Updates for the 1.0 core libraries.
 
 ## [v0.5.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.5.0) - 2015-11-20
 
-- Updated for PureScript 0.7.6 and the updated generics (@zudov)
-
-**Note**: this release _requires_ PureScript 0.7.6 or newer.
+- Updated for PureScript 0.7.6 and the updated generics (@zudov). **Note**: this release _requires_ PureScript 0.7.6 or newer.
 
 ## [v0.4.1](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.4.1) - 2015-11-04
 
-- Fix various warnings
+- Fixed various warnings
 
 ## [v0.4.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.4.0) - 2015-11-04
 
-Updated dependencies
+- Updated dependencies
 
 ## [v0.3.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.3.0) - 2015-08-25
+
+- Added generic deriving (#3)
 
 ## [v0.2.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v0.2.0) - 2015-08-19
 
