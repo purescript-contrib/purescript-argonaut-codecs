@@ -4,6 +4,7 @@ import Data.Argonaut.Encode.Encoders
 
 import Data.Argonaut.Core (Json, fromObject)
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.String.NonEmpty (NonEmptyString)
 import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List)
@@ -57,6 +58,9 @@ instance encodeJsonJson :: EncodeJson Json where
 
 instance encodeJsonCodePoint :: EncodeJson CodePoint where
   encodeJson = encodeCodePoint
+
+instance encodeNonEmptyString :: EncodeJson NonEmptyString where
+  encodeJson = encodeNonEmptyString
 
 instance encodeJsonNonEmpty_Array :: (EncodeJson a) => EncodeJson (NonEmpty Array a) where
   encodeJson = encodeNonEmpty_Array encodeJson
