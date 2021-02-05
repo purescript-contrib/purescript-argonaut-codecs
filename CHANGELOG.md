@@ -9,6 +9,7 @@ Breaking changes (😱!!!):
 
 New features:
 - Added decoders for `NonEmptyString` and added a new `decodeNonempty` function (#94)
+- Added encoder for `NonEmptyString` (d0liver, #98)
 
 Bugfixes:
 
