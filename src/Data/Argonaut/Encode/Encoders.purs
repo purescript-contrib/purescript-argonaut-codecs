@@ -12,6 +12,8 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:), toUnfoldable)
 import Data.List.NonEmpty as NEL
 import Data.List.Types (NonEmptyList)
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (NonEmpty(..))
@@ -59,6 +61,9 @@ encodeString = fromString
 
 encodeCodePoint :: CodePoint -> Json
 encodeCodePoint = encodeString <<< CP.singleton
+
+encodeNonEmptyString :: NonEmptyString -> Json
+encodeNonEmptyString = fromString <<< NonEmptyString.toString
 
 encodeNonEmpty_Array :: forall a. (a -> Json) -> NonEmpty Array a -> Json
 encodeNonEmpty_Array encoder (NonEmpty h t) = encodeArray encoder (Arr.cons h t)

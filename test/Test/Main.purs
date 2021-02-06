@@ -11,6 +11,8 @@ import Data.Argonaut.Encode (encodeJson, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Gen (genJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.Bifunctor (rmap)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldl)
@@ -311,6 +313,21 @@ nonEmptyCheck = do
         Right decoded ->
           decoded == x
             <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> printJsonDecodeError err
+
+
+  test "Test EncodeJson/DecodeJson on NonEmptyString" do
+    quickCheck \(x :: NonEmptyString) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?>
+              (  " x = "
+              <> NonEmptyString.toString x
+              <> ", decoded = "
+              <> NonEmptyString.toString decoded
+              )
         Left err ->
           false <?> printJsonDecodeError err
 
