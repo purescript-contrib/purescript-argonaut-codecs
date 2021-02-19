@@ -14,16 +14,21 @@
     "output"
   ],
   "dependencies": {
-    "purescript-argonaut-core": "main",
-    "purescript-arrays": "master",
-    "purescript-effect": "master",
-    "purescript-foreign-object": "master",
-    "purescript-identity": "master",
-    "purescript-integers": "master",
-    "purescript-maybe": "master",
-    "purescript-nonempty": "master",
-    "purescript-ordered-collections": "master",
-    "purescript-prelude": "master",
-    "purescript-record": "master"
+    "purescript-argonaut-core": "^6.0.0",
+    "purescript-arrays": "^6.0.0",
+    "purescript-effect": "^3.0.0",
+    "purescript-foreign-object": "^3.0.0",
+    "purescript-identity": "^5.0.0",
+    "purescript-integers": "^5.0.0",
+    "purescript-maybe": "^5.0.0",
+    "purescript-nonempty": "^6.0.0",
+    "purescript-ordered-collections": "^2.0.0",
+    "purescript-prelude": "^5.0.0",
+    "purescript-record": "^3.0.0"
+  },
+  "devDependencies": {
+    "purescript-assert": "^5.0.0",
+    "purescript-console": "^5.0.0",
+    "purescript-quickcheck": "^7.0.0"
   }
 }
