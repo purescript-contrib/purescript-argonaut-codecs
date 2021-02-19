@@ -1,29 +1,29 @@
 {
-    "name": "purescript-argonaut-codecs",
-    "license": [
-        "MIT"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/purescript-contrib/purescript-argonaut-codecs"
-    },
-    "ignore": [
-        "**/.*",
-        "node_modules",
-        "bower_components",
-        "output"
-    ],
-    "dependencies": {
-        "purescript-argonaut-core": "main",
-        "purescript-arrays": "master",
-        "purescript-effect": "master",
-        "purescript-foreign-object": "master",
-        "purescript-identity": "master",
-        "purescript-integers": "master",
-        "purescript-maybe": "master",
-        "purescript-nonempty": "master",
-        "purescript-ordered-collections": "master",
-        "purescript-prelude": "master",
-        "purescript-record": "master"
-    }
+  "name": "purescript-argonaut-codecs",
+  "license": [
+    "MIT"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/purescript-contrib/purescript-argonaut-codecs.git"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-argonaut-core": "main",
+    "purescript-arrays": "master",
+    "purescript-effect": "master",
+    "purescript-foreign-object": "master",
+    "purescript-identity": "master",
+    "purescript-integers": "master",
+    "purescript-maybe": "master",
+    "purescript-nonempty": "master",
+    "purescript-ordered-collections": "master",
+    "purescript-prelude": "master",
+    "purescript-record": "master"
+  }
 }
