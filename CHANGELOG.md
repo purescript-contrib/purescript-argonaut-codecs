@@ -8,6 +8,8 @@ Breaking changes:
 
 New features:
 
+- Added support for decoding missing record fields to `Nothing` (#93 by @jvliwanag)
+
 Bugfixes:
 
 Other improvements:
