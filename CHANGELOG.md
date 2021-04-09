@@ -8,11 +8,14 @@ Breaking changes:
 
 New features:
 
-- Added support for decoding missing record fields to `Nothing` (#93 by @jvliwanag)
-
 Bugfixes:
 
 Other improvements:
+
+## [v8.1.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v8.1.0) - 2021-04-09
+
+New features:
+- Added support for decoding missing record fields to `Nothing` (#93 by @jvliwanag)
 
 ## [v8.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v8.0.0) - 2021-02-26
 
