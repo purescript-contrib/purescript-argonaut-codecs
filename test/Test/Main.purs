@@ -185,7 +185,7 @@ combinatorsCheck = do
     obj <- genObj
     let appended = (key := val) ~> obj
     case toObject appended >>= FO.lookup key of
-      Just value -> pure Success
+      Just _ -> pure Success
       _ -> pure (Failed "failed to lookup key")
 
   propAssocAppendOptional :: Gen Result
@@ -195,7 +195,7 @@ combinatorsCheck = do
     obj <- genObj
     let appended = (key :=? maybeVal) ~>? obj
     pure case toObject appended >>= FO.lookup key of
-      Just value -> isJust maybeVal === true
+      Just _ -> isJust maybeVal === true
       _ -> isNothing maybeVal === true
 
   propGetJObjectField :: Gen Result
