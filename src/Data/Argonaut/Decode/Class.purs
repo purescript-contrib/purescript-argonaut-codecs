@@ -94,11 +94,11 @@ instance decodeMap :: (Ord a, DecodeJson a, DecodeJson b) => DecodeJson (M.Map a
 instance decodeVoid :: DecodeJson Void where
   decodeJson = decodeVoid
 
-instance decodeRecord
-  :: ( GDecodeJson row list
-     , RL.RowToList row list
-     )
-  => DecodeJson (Record row) where
+instance decodeRecord ::
+  ( GDecodeJson row list
+  , RL.RowToList row list
+  ) =>
+  DecodeJson (Record row) where
   decodeJson json =
     case toObject json of
       Just object -> gDecodeJson object (Proxy :: Proxy list)
@@ -110,14 +110,14 @@ class GDecodeJson (row :: Row Type) (list :: RL.RowList Type) | list -> row wher
 instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
   gDecodeJson _ _ = Right {}
 
-instance gDecodeJsonCons
-  :: ( DecodeJsonField value
-     , GDecodeJson rowTail tail
-     , IsSymbol field
-     , Row.Cons field value rowTail row
-     , Row.Lacks field rowTail
-     )
-  => GDecodeJson row (RL.Cons field value tail) where
+instance gDecodeJsonCons ::
+  ( DecodeJsonField value
+  , GDecodeJson rowTail tail
+  , IsSymbol field
+  , Row.Cons field value rowTail row
+  , Row.Lacks field rowTail
+  ) =>
+  GDecodeJson row (RL.Cons field value tail) where
   gDecodeJson object _ = do
     let
       _field = Proxy :: Proxy field
@@ -136,13 +136,13 @@ instance gDecodeJsonCons
 class DecodeJsonField a where
   decodeJsonField :: Maybe Json -> Maybe (Either JsonDecodeError a)
 
-instance decodeFieldMaybe
-  :: DecodeJson a
-  => DecodeJsonField (Maybe a) where
+instance decodeFieldMaybe ::
+  DecodeJson a =>
+  DecodeJsonField (Maybe a) where
   decodeJsonField Nothing = Just $ Right Nothing
   decodeJsonField (Just j) = Just $ decodeJson j
 
-else instance decodeFieldId
-  :: DecodeJson a
-  => DecodeJsonField a where
+else instance decodeFieldId ::
+  DecodeJson a =>
+  DecodeJsonField a where
   decodeJsonField j = decodeJson <$> j

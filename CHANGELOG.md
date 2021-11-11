@@ -11,6 +11,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Added `purs-tidy` formatter (#104 by @thomashoneyman)
 
 ## [v8.1.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v8.1.0) - 2021-04-09
 

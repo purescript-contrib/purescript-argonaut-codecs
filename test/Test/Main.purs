@@ -206,8 +206,10 @@ combinatorsCheck = do
     where
     go :: FO.Object Json -> Boolean
     go object =
-      let keys = FO.keys object
-      in foldl (\ok key -> ok && isJust (FO.lookup key object)) true keys
+      let
+        keys = FO.keys object
+      in
+        foldl (\ok key -> ok && isJust (FO.lookup key object)) true keys
 
 eitherCheck :: Test
 eitherCheck = do
@@ -287,7 +289,7 @@ manualRecordDecode = do
     testBazCases = do
       test "Missing 'baz' key should decode to FooNested" do
         case decodeJson fooNestedBarJson of
-          Right (FooNested { bar: Just [1], baz: false }) -> pure unit
+          Right (FooNested { bar: Just [ 1 ], baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBarJson)
 
       test "Null 'baz' key should fail to decode to FooNested" do
@@ -297,24 +299,24 @@ manualRecordDecode = do
 
       test "Missing 'baz' key should decode to FooNested'" do
         case decodeJson fooNestedBarJson of
-          Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
+          Right (FooNested' { bar: Just [ 1 ], baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBarJson)
 
       test "Null 'baz' key should decode to FooNested'" do
         case decodeJson fooNestedBarJsonNull of
-          Right (FooNested' { bar: Just [1], baz: false }) -> pure unit
+          Right (FooNested' { bar: Just [ 1 ], baz: false }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedBarJsonNull)
 
     testFullCases :: Test
     testFullCases = do
       test "Json should decode to FooNested" do
         case decodeJson fooNestedFullJson of
-          Right (FooNested { bar: Just [1], baz: true }) -> pure unit
+          Right (FooNested { bar: Just [ 1 ], baz: true }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedFullJson)
 
       test "Json should decode to FooNested'" do
         case decodeJson fooNestedFullJson of
-          Right (FooNested { bar: Just [1], baz: true }) -> pure unit
+          Right (FooNested { bar: Just [ 1 ], baz: true }) -> pure unit
           _ -> failure ("Failed to properly decode JSON string: " <> stringify fooNestedFullJson)
 
   test "Test that decoding custom record is pure unitful" do
@@ -338,17 +340,16 @@ nonEmptyCheck = do
         Left err ->
           false <?> printJsonDecodeError err
 
-
   test "Test EncodeJson/DecodeJson on NonEmptyString" do
     quickCheck \(x :: NonEmptyString) ->
       case decodeJson (encodeJson x) of
         Right decoded ->
           decoded == x
             <?>
-              (  " x = "
-              <> NonEmptyString.toString x
-              <> ", decoded = "
-              <> NonEmptyString.toString decoded
+              ( " x = "
+                  <> NonEmptyString.toString x
+                  <> ", decoded = "
+                  <> NonEmptyString.toString decoded
               )
         Left err ->
           false <?> printJsonDecodeError err

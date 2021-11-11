@@ -33,9 +33,9 @@ encodeMaybe encoder = case _ of
   Just a -> encoder a
 
 encodeTuple :: forall a b. (a -> Json) -> (b -> Json) -> Tuple a b -> Json
-encodeTuple encoderA encoderB (Tuple a b) = fromArray [encoderA a, encoderB b]
+encodeTuple encoderA encoderB (Tuple a b) = fromArray [ encoderA a, encoderB b ]
 
-encodeEither :: forall a b . (a -> Json) -> (b -> Json) -> Either a b -> Json
+encodeEither :: forall a b. (a -> Json) -> (b -> Json) -> Either a b -> Json
 encodeEither encoderA encoderB = either (obj encoderA "Left") (obj encoderB "Right")
   where
   obj :: forall c. (c -> Json) -> String -> c -> Json
