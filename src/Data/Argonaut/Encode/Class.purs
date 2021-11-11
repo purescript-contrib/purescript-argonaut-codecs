@@ -95,11 +95,11 @@ instance encodeMap :: (Ord a, EncodeJson a, EncodeJson b) => EncodeJson (M.Map a
 instance encodeVoid :: EncodeJson Void where
   encodeJson = encodeVoid
 
-instance encodeRecord
-  :: ( GEncodeJson row list
-     , RL.RowToList row list
-     )
-  => EncodeJson (Record row) where
+instance encodeRecord ::
+  ( GEncodeJson row list
+  , RL.RowToList row list
+  ) =>
+  EncodeJson (Record row) where
   encodeJson rec = fromObject $ gEncodeJson rec (Proxy :: Proxy list)
 
 class GEncodeJson (row :: Row Type) (list :: RL.RowList Type) where
@@ -108,13 +108,13 @@ class GEncodeJson (row :: Row Type) (list :: RL.RowList Type) where
 instance gEncodeJsonNil :: GEncodeJson row RL.Nil where
   gEncodeJson _ _ = FO.empty
 
-instance gEncodeJsonCons
-  :: ( EncodeJson value
-     , GEncodeJson row tail
-     , IsSymbol field
-     , Row.Cons field value tail' row
-     )
-  => GEncodeJson row (RL.Cons field value tail) where
+instance gEncodeJsonCons ::
+  ( EncodeJson value
+  , GEncodeJson row tail
+  , IsSymbol field
+  , Row.Cons field value tail' row
+  ) =>
+  GEncodeJson row (RL.Cons field value tail) where
   gEncodeJson row _ = do
     let _field = Proxy :: Proxy field
     FO.insert

@@ -53,7 +53,7 @@ decodeTuple decoderA decoderB json = decodeArray Right json >>= f
   where
   f :: Array Json -> Either JsonDecodeError (Tuple a b)
   f = case _ of
-    [a, b] -> Tuple <$> decoderA a <*> decoderB b
+    [ a, b ] -> Tuple <$> decoderA a <*> decoderB b
     _ -> Left $ TypeMismatch "Tuple"
 
 decodeEither
@@ -100,8 +100,8 @@ decodeNonEmpty_Array decoder =
   lmap (Named "NonEmpty Array")
     <<< traverse decoder
     <=< map (\x -> x.head :| x.tail)
-    <<< note (TypeMismatch "NonEmpty Array")
-    <<< Arr.uncons
+      <<< note (TypeMismatch "NonEmpty Array")
+      <<< Arr.uncons
     <=< decodeJArray
 
 decodeNonEmptyArray
@@ -113,8 +113,8 @@ decodeNonEmptyArray decoder =
   lmap (Named "NonEmptyArray")
     <<< traverse decoder
     <=< map (\x -> NEA.cons' x.head x.tail)
-    <<< note (TypeMismatch "NonEmptyArray")
-    <<< Arr.uncons
+      <<< note (TypeMismatch "NonEmptyArray")
+      <<< Arr.uncons
     <=< decodeJArray
 
 decodeNonEmpty_List
@@ -126,8 +126,8 @@ decodeNonEmpty_List decoder =
   lmap (Named "NonEmpty List")
     <<< traverse decoder
     <=< map (\x -> x.head :| x.tail)
-    <<< note (TypeMismatch "NonEmpty List")
-    <<< L.uncons
+      <<< note (TypeMismatch "NonEmpty List")
+      <<< L.uncons
     <=< map (map fromFoldable) decodeJArray
 
 decodeNonEmptyList
@@ -139,8 +139,8 @@ decodeNonEmptyList decoder =
   lmap (Named "NonEmptyList")
     <<< traverse decoder
     <=< map (\x -> NEL.cons' x.head x.tail)
-    <<< note (TypeMismatch "NonEmptyList")
-    <<< L.uncons
+      <<< note (TypeMismatch "NonEmptyList")
+      <<< L.uncons
     <=< map (map fromFoldable) decodeJArray
 
 decodeCodePoint :: Json -> Either JsonDecodeError CodePoint
