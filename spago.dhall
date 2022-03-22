@@ -21,7 +21,6 @@
   , "nonempty"
   , "ordered-collections"
   , "prelude"
-  , "psci-support"
   , "quickcheck"
   , "record"
   , "strings"
