@@ -7,20 +7,20 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 
 New features:
-- Added `fromJsonString` and `toJsonString` (#109 by @sigma-andex)
 
 Bugfixes:
 
 Other improvements:
 
+## [v9.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v9.1.0) - 2022-06-23
+
+New features:
+- Added `fromJsonString` and `toJsonString` (#109 by @sigma-andex)
+
 ## [v9.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v9.0.0) - 2022-04-27
 
 Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#106 by @JordanMartinez)
-
-New features:
-
-Bugfixes:
 
 Other improvements:
 - Added `purs-tidy` formatter (#104 by @thomashoneyman)
