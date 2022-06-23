@@ -4,8 +4,7 @@ module Data.Argonaut.Decode
   , module Data.Argonaut.Decode.Combinators
   , module Data.Argonaut.Decode.Error
   , module Data.Argonaut.Decode.Parser
-  )
-  where
+  ) where
 
 import Prelude
 

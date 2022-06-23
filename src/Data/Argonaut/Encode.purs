@@ -2,8 +2,7 @@ module Data.Argonaut.Encode
   ( module Data.Argonaut.Encode.Class
   , module Data.Argonaut.Encode.Combinators
   , toJson
-  )
-  where
+  ) where
 
 import Prelude
 
