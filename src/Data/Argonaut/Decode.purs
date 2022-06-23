@@ -1,5 +1,5 @@
 module Data.Argonaut.Decode
-  ( fromJson
+  ( fromJsonString
   , module Data.Argonaut.Decode.Class
   , module Data.Argonaut.Decode.Combinators
   , module Data.Argonaut.Decode.Error
@@ -15,5 +15,5 @@ import Data.Argonaut.Decode.Parser (parseJson)
 import Data.Either (Either)
 
 -- | Parse and decode a json in one step.
-fromJson :: forall json. DecodeJson json => String -> Either JsonDecodeError json
-fromJson = parseJson >=> decodeJson
+fromJsonString :: forall json. DecodeJson json => String -> Either JsonDecodeError json
+fromJsonString = parseJson >=> decodeJson
