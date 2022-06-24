@@ -3,7 +3,7 @@ module Data.Argonaut.Decode.Class where
 import Data.Argonaut.Decode.Decoders
 
 import Data.Argonaut.Core (Json, toObject)
-import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Error (JsonDecodeError'(..))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
@@ -26,7 +26,7 @@ import Record as Record
 import Type.Proxy (Proxy(..))
 
 class DecodeJson a where
-  decodeJson :: Json -> Either JsonDecodeError a
+  decodeJson :: forall customErr. Json -> Either (JsonDecodeError' customErr) a
 
 instance decodeIdentity :: DecodeJson a => DecodeJson (Identity a) where
   decodeJson = decodeIdentity decodeJson
@@ -105,7 +105,7 @@ instance decodeRecord ::
       Nothing -> Left $ TypeMismatch "Object"
 
 class GDecodeJson (row :: Row Type) (list :: RL.RowList Type) | list -> row where
-  gDecodeJson :: forall proxy. FO.Object Json -> proxy list -> Either JsonDecodeError (Record row)
+  gDecodeJson :: forall customErr proxy. FO.Object Json -> proxy list -> Either (JsonDecodeError' customErr) (Record row)
 
 instance gDecodeJsonNil :: GDecodeJson () RL.Nil where
   gDecodeJson _ _ = Right {}
@@ -134,7 +134,7 @@ instance gDecodeJsonCons ::
         Left $ AtKey fieldName MissingValue
 
 class DecodeJsonField a where
-  decodeJsonField :: Maybe Json -> Maybe (Either JsonDecodeError a)
+  decodeJsonField :: forall customErr. Maybe Json -> Maybe (Either (JsonDecodeError' customErr) a)
 
 instance decodeFieldMaybe ::
   DecodeJson a =>

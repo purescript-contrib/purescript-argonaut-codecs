@@ -3,7 +3,7 @@ module Data.Argonaut.Decode.Decoders where
 import Prelude
 
 import Data.Argonaut.Core (Json, caseJsonBoolean, caseJsonNull, caseJsonNumber, caseJsonString, isNull, toArray, toObject, toString, fromString)
-import Data.Argonaut.Decode.Error (JsonDecodeError(..))
+import Data.Argonaut.Decode.Error (JsonDecodeError'(..))
 import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
@@ -28,40 +28,40 @@ import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
 
 decodeIdentity
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (Identity a)
+  -> Either (JsonDecodeError' customErr) (Identity a)
 decodeIdentity decoder json = Identity <$> decoder json
 
 decodeMaybe
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (Maybe a)
+  -> Either (JsonDecodeError' customErr) (Maybe a)
 decodeMaybe decoder json
   | isNull json = pure Nothing
   | otherwise = Just <$> decoder json
 
 decodeTuple
-  :: forall a b
-   . (Json -> Either JsonDecodeError a)
-  -> (Json -> Either JsonDecodeError b)
+  :: forall customErr a b
+   . (Json -> Either (JsonDecodeError' customErr) a)
+  -> (Json -> Either (JsonDecodeError' customErr) b)
   -> Json
-  -> Either JsonDecodeError (Tuple a b)
+  -> Either (JsonDecodeError' customErr) (Tuple a b)
 decodeTuple decoderA decoderB json = decodeArray Right json >>= f
   where
-  f :: Array Json -> Either JsonDecodeError (Tuple a b)
+  f :: Array Json -> Either (JsonDecodeError' customErr) (Tuple a b)
   f = case _ of
     [ a, b ] -> Tuple <$> decoderA a <*> decoderB b
     _ -> Left $ TypeMismatch "Tuple"
 
 decodeEither
-  :: forall a b
-   . (Json -> Either JsonDecodeError a)
-  -> (Json -> Either JsonDecodeError b)
+  :: forall customErr a b
+   . (Json -> Either (JsonDecodeError' customErr) a)
+  -> (Json -> Either (JsonDecodeError' customErr) b)
   -> Json
-  -> Either JsonDecodeError (Either a b)
+  -> Either (JsonDecodeError' customErr) (Either a b)
 decodeEither decoderA decoderB json =
   lmap (Named "Either") $ decodeJObject json >>= \obj -> do
     tag <- note (AtKey "tag" MissingValue) $ FO.lookup "tag" obj
@@ -71,31 +71,31 @@ decodeEither decoderA decoderB json =
       Just "Left" -> Left <$> decoderA val
       _ -> Left $ AtKey "tag" (UnexpectedValue tag)
 
-decodeNull :: Json -> Either JsonDecodeError Unit
+decodeNull :: forall customErr. Json -> Either (JsonDecodeError' customErr) Unit
 decodeNull = caseJsonNull (Left $ TypeMismatch "null") (const $ Right unit)
 
-decodeBoolean :: Json -> Either JsonDecodeError Boolean
+decodeBoolean :: forall customErr. Json -> Either (JsonDecodeError' customErr) Boolean
 decodeBoolean = caseJsonBoolean (Left $ TypeMismatch "Boolean") Right
 
-decodeNumber :: Json -> Either JsonDecodeError Number
+decodeNumber :: forall customErr. Json -> Either (JsonDecodeError' customErr) Number
 decodeNumber = caseJsonNumber (Left $ TypeMismatch "Number") Right
 
-decodeInt :: Json -> Either JsonDecodeError Int
+decodeInt :: forall customErr. Json -> Either (JsonDecodeError' customErr) Int
 decodeInt = note (TypeMismatch "Integer") <<< fromNumber <=< decodeNumber
 
-decodeString :: Json -> Either JsonDecodeError String
+decodeString :: forall customErr. Json -> Either (JsonDecodeError' customErr) String
 decodeString = caseJsonString (Left $ TypeMismatch "String") Right
 
-decodeNonEmptyString :: Json -> Either JsonDecodeError NonEmptyString
+decodeNonEmptyString :: forall customErr. Json -> Either (JsonDecodeError' customErr) NonEmptyString
 decodeNonEmptyString json =
   note (Named "NonEmptyString" $ UnexpectedValue json)
     =<< map (NonEmptyString.fromString) (decodeString json)
 
 decodeNonEmpty_Array
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (NonEmpty Array a)
+  -> Either (JsonDecodeError' customErr) (NonEmpty Array a)
 decodeNonEmpty_Array decoder =
   lmap (Named "NonEmpty Array")
     <<< traverse decoder
@@ -105,10 +105,10 @@ decodeNonEmpty_Array decoder =
     <=< decodeJArray
 
 decodeNonEmptyArray
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (NonEmptyArray a)
+  -> Either (JsonDecodeError' customErr) (NonEmptyArray a)
 decodeNonEmptyArray decoder =
   lmap (Named "NonEmptyArray")
     <<< traverse decoder
@@ -118,10 +118,10 @@ decodeNonEmptyArray decoder =
     <=< decodeJArray
 
 decodeNonEmpty_List
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (NonEmpty List a)
+  -> Either (JsonDecodeError' customErr) (NonEmpty List a)
 decodeNonEmpty_List decoder =
   lmap (Named "NonEmpty List")
     <<< traverse decoder
@@ -131,10 +131,10 @@ decodeNonEmpty_List decoder =
     <=< map (map fromFoldable) decodeJArray
 
 decodeNonEmptyList
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (NonEmptyList a)
+  -> Either (JsonDecodeError' customErr) (NonEmptyList a)
 decodeNonEmptyList decoder =
   lmap (Named "NonEmptyList")
     <<< traverse decoder
@@ -143,76 +143,76 @@ decodeNonEmptyList decoder =
       <<< L.uncons
     <=< map (map fromFoldable) decodeJArray
 
-decodeCodePoint :: Json -> Either JsonDecodeError CodePoint
+decodeCodePoint :: forall customErr. Json -> Either (JsonDecodeError' customErr) CodePoint
 decodeCodePoint json =
   note (Named "CodePoint" $ UnexpectedValue json)
     =<< map (codePointAt 0) (decodeString json)
 
 decodeForeignObject
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (FO.Object a)
+  -> Either (JsonDecodeError' customErr) (FO.Object a)
 decodeForeignObject decoder =
   lmap (Named "ForeignObject")
     <<< traverse decoder
     <=< decodeJObject
 
 decodeArray
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (Array a)
+  -> Either (JsonDecodeError' customErr) (Array a)
 decodeArray decoder =
   lmap (Named "Array")
     <<< traverseWithIndex (\i -> lmap (AtIndex i) <<< decoder)
     <=< decodeJArray
 
 decodeList
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (List a)
+  -> Either (JsonDecodeError' customErr) (List a)
 decodeList decoder =
   lmap (Named "List")
     <<< traverse decoder
     <=< map (map fromFoldable) decodeJArray
 
 decodeSet
-  :: forall a
+  :: forall customErr a
    . Ord a
-  => (Json -> Either JsonDecodeError a)
+  => (Json -> Either (JsonDecodeError' customErr) a)
   -> Json
-  -> Either JsonDecodeError (S.Set a)
+  -> Either (JsonDecodeError' customErr) (S.Set a)
 decodeSet decoder =
   map (S.fromFoldable :: List a -> S.Set a) <<< decodeList decoder
 
 decodeMap
-  :: forall a b
+  :: forall customErr a b
    . Ord a
-  => (Json -> Either JsonDecodeError a)
-  -> (Json -> Either JsonDecodeError b)
+  => (Json -> Either (JsonDecodeError' customErr) a)
+  -> (Json -> Either (JsonDecodeError' customErr) b)
   -> Json
-  -> Either JsonDecodeError (M.Map a b)
+  -> Either (JsonDecodeError' customErr) (M.Map a b)
 decodeMap decoderA decoderB =
   map (M.fromFoldable :: List (Tuple a b) -> M.Map a b)
     <<< decodeList (decodeTuple decoderA decoderB)
 
-decodeVoid :: Json -> Either JsonDecodeError Void
+decodeVoid :: forall customErr. Json -> Either (JsonDecodeError' customErr) Void
 decodeVoid _ = Left $ UnexpectedValue $ fromString "Value cannot be Void"
 
-decodeJArray :: Json -> Either JsonDecodeError (Array Json)
+decodeJArray :: forall customErr. Json -> Either (JsonDecodeError' customErr) (Array Json)
 decodeJArray = note (TypeMismatch "Array") <<< toArray
 
-decodeJObject :: Json -> Either JsonDecodeError (FO.Object Json)
+decodeJObject :: forall customErr. Json -> Either (JsonDecodeError' customErr) (FO.Object Json)
 decodeJObject = note (TypeMismatch "Object") <<< toObject
 
 getField
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> FO.Object Json
   -> String
-  -> Either JsonDecodeError a
+  -> Either (JsonDecodeError' customErr) a
 getField decoder obj str =
   maybe
     (Left $ AtKey str MissingValue)
@@ -220,22 +220,22 @@ getField decoder obj str =
     (FO.lookup str obj)
 
 getFieldOptional
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> FO.Object Json
   -> String
-  -> Either JsonDecodeError (Maybe a)
+  -> Either (JsonDecodeError' customErr) (Maybe a)
 getFieldOptional decoder obj str =
   maybe (pure Nothing) (map Just <<< decode) (FO.lookup str obj)
   where
   decode = lmap (AtKey str) <<< decoder
 
 getFieldOptional'
-  :: forall a
-   . (Json -> Either JsonDecodeError a)
+  :: forall customErr a
+   . (Json -> Either (JsonDecodeError' customErr) a)
   -> FO.Object Json
   -> String
-  -> Either JsonDecodeError (Maybe a)
+  -> Either (JsonDecodeError' customErr) (Maybe a)
 getFieldOptional' decoder obj str =
   maybe (pure Nothing) decode (FO.lookup str obj)
   where
