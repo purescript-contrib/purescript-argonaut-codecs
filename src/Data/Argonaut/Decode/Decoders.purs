@@ -26,6 +26,7 @@ import Data.Traversable (traverse)
 import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as FO
+import Data.String.CodeUnits (toChar) as CU
 
 decodeIdentity
   :: forall a
@@ -147,6 +148,11 @@ decodeCodePoint :: Json -> Either JsonDecodeError CodePoint
 decodeCodePoint json =
   note (Named "CodePoint" $ UnexpectedValue json)
     =<< map (codePointAt 0) (decodeString json)
+
+decodeChar :: Json -> Either JsonDecodeError Char
+decodeChar json =
+  note (Named "Char" $ UnexpectedValue json)
+    =<< map CU.toChar (decodeString json)
 
 decodeForeignObject
   :: forall a

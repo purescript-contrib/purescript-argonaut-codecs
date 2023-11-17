@@ -76,6 +76,9 @@ instance decodeJsonNonEmptyList :: (DecodeJson a) => DecodeJson (NonEmptyList a)
 instance decodeJsonCodePoint :: DecodeJson CodePoint where
   decodeJson = decodeCodePoint
 
+instance decodeChar :: DecodeJson Char where
+  decodeJson = decodeChar
+
 instance decodeForeignObject :: DecodeJson a => DecodeJson (FO.Object a) where
   decodeJson = decodeForeignObject decodeJson
 

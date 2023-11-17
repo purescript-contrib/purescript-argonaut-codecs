@@ -71,6 +71,7 @@ jsonParser' = either (liftEffect <<< throw) pure <<< jsonParser
 main :: Effect Unit
 main = flip runReaderT 0 do
   suite "Either Check" eitherCheck
+  suite "Char Check" charCheck
   suite "Encode/Decode NonEmpty Check" nonEmptyCheck
   suite "Encode/Decode Checks" encodeDecodeCheck
   suite "Encode/Decode Record Checks" encodeDecodeRecordCheck
@@ -215,6 +216,17 @@ eitherCheck :: Test
 eitherCheck = do
   test "Test EncodeJson/DecodeJson Either test" do
     quickCheck \(x :: Either String String) ->
+      case decodeJson (encodeJson x) of
+        Right decoded ->
+          decoded == x
+            <?> ("x = " <> show x <> ", decoded = " <> show decoded)
+        Left err ->
+          false <?> printJsonDecodeError err
+
+charCheck :: Test
+charCheck = do
+  test "Test EncodeJson/DecodeJson Char test" do
+    quickCheck \(x :: Char) ->
       case decodeJson (encodeJson x) of
         Right decoded ->
           decoded == x
