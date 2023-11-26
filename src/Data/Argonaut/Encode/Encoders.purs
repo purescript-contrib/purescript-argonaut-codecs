@@ -42,7 +42,7 @@ encodeEither encoderA encoderB = either (obj encoderA "Left") (obj encoderB "Rig
   obj encoder tag x =
     fromObject
       $ FO.fromFoldable
-      $ Tuple "tag" (fromString tag) : Tuple "value" (encoder x) : Nil
+      $ Tuple "tag" (fromString tag) : Tuple "contents" (encoder x) : Nil
 
 encodeUnit :: Unit -> Json
 encodeUnit = const jsonNull

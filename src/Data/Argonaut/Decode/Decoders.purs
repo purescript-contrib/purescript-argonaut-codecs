@@ -66,7 +66,7 @@ decodeEither
 decodeEither decoderA decoderB json =
   lmap (Named "Either") $ decodeJObject json >>= \obj -> do
     tag <- note (AtKey "tag" MissingValue) $ FO.lookup "tag" obj
-    val <- note (AtKey "value" MissingValue) $ FO.lookup "value" obj
+    val <- note (AtKey "contents" MissingValue) $ FO.lookup "contents" obj
     case toString tag of
       Just "Right" -> Right <$> decoderB val
       Just "Left" -> Left <$> decoderA val
