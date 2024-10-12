@@ -1,8 +1,0 @@
-{
-  "name": "purescript-argonaut-codecs",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/purescript-contrib/purescript-argonaut-codecs.git"
-  }
-}
