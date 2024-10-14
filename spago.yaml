@@ -1,0 +1,36 @@
+package:
+  name: argonaut-codecs
+  publish:
+    license: MIT
+    version: 10.0.0
+    location:
+      githubOwner: purescript-contrib
+      githubRepo: purescript-argonaut-codecs
+  dependencies:
+    - argonaut-core: ">=7.0.0 <8.0.0"
+    - arrays: ">=7.3.0 <8.0.0"
+    - bifunctors: ">=6.0.0 <7.0.0"
+    - either: ">=6.1.0 <7.0.0"
+    - foldable-traversable: ">=6.0.0 <7.0.0"
+    - foreign-object: ">=4.1.0 <5.0.0"
+    - identity: ">=6.0.0 <7.0.0"
+    - integers: ">=6.0.0 <7.0.0"
+    - lists: ">=7.0.0 <8.0.0"
+    - maybe: ">=6.0.0 <7.0.0"
+    - nonempty: ">=7.0.0 <8.0.0"
+    - ordered-collections: ">=3.2.0 <4.0.0"
+    - prelude: ">=6.0.1 <7.0.0"
+    - record: ">=4.0.0 <5.0.0"
+    - strings: ">=6.0.1 <7.0.0"
+    - tuples: ">=7.0.0 <8.0.0"
+  test:
+    main: Test.Main
+    dependencies:
+      - assert
+      - console
+      - effect
+      - exceptions
+      - gen
+      - quickcheck
+      - transformers
+workspace: {}
