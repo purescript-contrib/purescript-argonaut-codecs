@@ -8,6 +8,7 @@
   , "assert"
   , "bifunctors"
   , "console"
+  , "const"
   , "effect"
   , "either"
   , "exceptions"
