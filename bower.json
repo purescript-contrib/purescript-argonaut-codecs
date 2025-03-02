@@ -17,6 +17,7 @@
     "purescript-argonaut-core": "^7.0.0",
     "purescript-arrays": "^7.0.0",
     "purescript-bifunctors": "^6.0.0",
+    "purescript-const": "^6.0.0",
     "purescript-effect": "^4.0.0",
     "purescript-either": "^6.0.0",
     "purescript-foldable-traversable": "^6.0.0",
