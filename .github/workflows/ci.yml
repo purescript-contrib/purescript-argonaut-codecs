@@ -20,7 +20,7 @@ jobs:
           purs-tidy: "latest"
 
       - name: Cache PureScript dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
           path: |
