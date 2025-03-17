@@ -5,6 +5,7 @@ import Data.Argonaut.Encode.Encoders
 import Data.Argonaut.Core (Json, fromObject)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.String.NonEmpty (NonEmptyString)
+import Data.Const (Const)
 import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List)
@@ -28,6 +29,9 @@ class EncodeJson a where
 
 instance encodeIdentity :: EncodeJson a => EncodeJson (Identity a) where
   encodeJson = encodeIdentity encodeJson
+
+instance encodeConst :: EncodeJson a => EncodeJson (Const a b) where
+  encodeJson = encodeConst encodeJson
 
 instance encodeJsonMaybe :: EncodeJson a => EncodeJson (Maybe a) where
   encodeJson = encodeMaybe encodeJson

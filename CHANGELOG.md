@@ -12,6 +12,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+  - Decoding and encoding of the `Const` functor. (#118 by @bakhtiyarneyman)
 
 ## [v9.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v9.1.0) - 2022-06-23
 

@@ -6,6 +6,7 @@ import Data.Argonaut.Core (Json, toObject)
 import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Bifunctor (lmap)
+import Data.Const (Const)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.List (List)
@@ -30,6 +31,9 @@ class DecodeJson a where
 
 instance decodeIdentity :: DecodeJson a => DecodeJson (Identity a) where
   decodeJson = decodeIdentity decodeJson
+
+instance decodeConst :: DecodeJson a => DecodeJson (Const a b) where
+  decodeJson = decodeConst decodeJson
 
 instance decodeJsonMaybe :: DecodeJson a => DecodeJson (Maybe a) where
   decodeJson = decodeMaybe decodeJson

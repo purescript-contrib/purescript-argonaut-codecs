@@ -8,6 +8,7 @@ import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.Bifunctor (lmap)
+import Data.Const (Const(..))
 import Data.Either (Either(..), note)
 import Data.Identity (Identity(..))
 import Data.Int (fromNumber)
@@ -34,6 +35,13 @@ decodeIdentity
   -> Json
   -> Either JsonDecodeError (Identity a)
 decodeIdentity decoder json = Identity <$> decoder json
+
+decodeConst
+  :: forall a b
+   . (Json -> Either JsonDecodeError a)
+  -> Json
+  -> Either JsonDecodeError (Const a b)
+decodeConst decoder json = Const <$> decoder json
 
 decodeMaybe
   :: forall a

@@ -6,6 +6,7 @@ import Data.Argonaut.Core (Json, fromArray, fromBoolean, fromNumber, fromObject,
 import Data.Array as Arr
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
+import Data.Const (Const(..))
 import Data.Either (Either, either)
 import Data.Identity (Identity(..))
 import Data.Int (toNumber)
@@ -26,6 +27,9 @@ import Foreign.Object as FO
 
 encodeIdentity :: forall a. (a -> Json) -> Identity a -> Json
 encodeIdentity encoder (Identity a) = encoder a
+
+encodeConst :: forall a b. (a -> Json) -> Const a b -> Json
+encodeConst encoder (Const a) = encoder a
 
 encodeMaybe :: forall a. (a -> Json) -> Maybe a -> Json
 encodeMaybe encoder = case _ of
