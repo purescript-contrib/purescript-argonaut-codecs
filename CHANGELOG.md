@@ -4,16 +4,15 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
-Breaking changes:
+## [v9.2.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v9.2.0) - 2026-10-11
 
 New features:
   - [Decoders for `Char`](https://github.com/purescript-contrib/purescript-argonaut-codecs/pull/114)
-
-Bugfixes:
+  - Decoding and encoding of the `Const` functor. (#118 by @bakhtiyarneyman)
 
 Other improvements:
-  - Decoding and encoding of the `Const` functor. (#118 by @bakhtiyarneyman)
   - Migrated to registry-backed Spago and updated CI tooling.
+  - Fixed invalid imports in the documentation. (#112 by @kentookura)
 
 ## [v9.0.0](https://github.com/purescript-contrib/purescript-argonaut-codecs/releases/tag/v9.1.0) - 2022-06-23
 
