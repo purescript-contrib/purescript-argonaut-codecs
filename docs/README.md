@@ -272,8 +272,8 @@ If your data type has an instance of `Generic`, then you can use [purescript-arg
 
 ```purs
 import Data.Generic.Rep (class Generic)
-import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson)
-import Data.Argonaut.Decode.Generic.Rep (genericDecodeJson)
+import Data.Argonaut.Encode.Generic (genericEncodeJson)
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
 
 data Team = RedTeam | BlueTeam
 
